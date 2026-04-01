@@ -13,6 +13,7 @@ margin:0;
 background:black;
 color:white;
 font-family:Arial;
+overflow:hidden;
 }
 
 .container{
@@ -28,14 +29,15 @@ flex-direction:column;
 }
 
 .logo{
-padding:10px;
+padding:12px;
 background:#000;
 }
 
-.top{
+.topbar{
 display:flex;
 gap:5px;
 padding:10px;
+background:#111;
 }
 
 #playlist{
@@ -44,13 +46,9 @@ overflow:auto;
 }
 
 .item{
-padding:10px;
+padding:12px;
 border-bottom:1px solid #222;
 cursor:pointer;
-}
-
-.item:hover{
-background:#222;
 }
 
 .active{
@@ -63,51 +61,63 @@ display:flex;
 flex-direction:column;
 }
 
-.player{
+#playerContainer{
 flex:1;
 position:relative;
+background:black;
 }
 
 video{
 width:100%;
 height:100%;
 object-fit:contain;
-background:black;
 }
+
+/* Controls */
 
 .controls{
 position:absolute;
-bottom:20px;
+bottom:15px;
 left:50%;
 transform:translateX(-50%);
 display:flex;
-gap:5px;
+gap:6px;
+padding:8px 10px;
 background:rgba(0,0,0,0.6);
-padding:8px;
-border-radius:10px;
+border-radius:12px;
+white-space:nowrap;
+transition:.3s;
+}
+
+.controls.hide{
+opacity:0;
+pointer-events:none;
 }
 
 .controls button,
 .controls select{
+padding:6px 8px;
 background:#111;
 color:white;
 border:1px solid #333;
-padding:6px;
 }
+
+/* Mobile */
 
 @media(max-width:768px){
 
 .container{
 flex-direction:column;
+height:100vh;
 }
 
 .main{
 height:220px;
+flex:none;
 }
 
 .sidebar{
 height:calc(100vh - 220px);
-width:100%;
 }
 
 }
@@ -122,15 +132,15 @@ width:100%;
 
 <div class="main">
 
-<div class="player">
+<div id="playerContainer">
 
-<video id="video" controls playsinline webkit-playsinline></video>
+<video id="video" controls playsinline preload="metadata"></video>
 
-<div class="controls">
+<div class="controls" id="controls">
 
 <button onclick="prev()">⏮</button>
-<button onclick="skip(-10)">⏪10s</button>
-<button onclick="skip(10)">10s⏩</button>
+<button onclick="skip(-10)">⏪</button>
+<button onclick="skip(10)">⏩</button>
 <button onclick="next()">⏭</button>
 
 <select onchange="speed(this.value)">
@@ -141,9 +151,15 @@ width:100%;
 <option value="2">2x</option>
 </select>
 
-<select id="quality" onchange="quality(this.value)"></select>
+<select id="quality" onchange="setQuality(this.value)">
+<option value="-1">Auto</option>
+<option value="0">240p</option>
+<option value="1">360p</option>
+<option value="2">480p</option>
+<option value="3">720p</option>
+</select>
 
-<button onclick="fullscreen()">⛶</button>
+<button onclick="toggleFull()">⛶</button>
 
 </div>
 
@@ -155,14 +171,14 @@ width:100%;
 
 <div class="logo">Ultimate Player</div>
 
-<div class="top">
+<div class="topbar">
 
-<select onchange="loadFile(this.value)">
+<select onchange="loadTxt(this.value)">
 <option value="videos.txt">Videos</option>
 <option value="arithmetic.txt">Arithmetic</option>
 </select>
 
-<input id="search" placeholder="Search" onkeyup="search()" style="flex:1">
+<input id="search" placeholder="Search" onkeyup="searchVideo()" style="flex:1">
 
 </div>
 
@@ -177,11 +193,15 @@ width:100%;
 let list=[]
 let index=0
 let hls
-let video=document.getElementById("video")
+let hideTimer
 
-loadFile("videos.txt")
+const video=document.getElementById("video")
+const controls=document.getElementById("controls")
+const player=document.getElementById("playerContainer")
 
-function loadFile(file){
+loadTxt("videos.txt")
+
+function loadTxt(file){
 
 fetch(file)
 .then(r=>r.text())
@@ -192,23 +212,76 @@ load()
 
 }
 
+function createHls(){
+
+return new Hls({
+
+enableWorker:true,
+lowLatencyMode:false,
+
+backBufferLength:120,
+
+maxBufferLength:40,
+maxMaxBufferLength:80,
+
+maxBufferSize:120*1000*1000,
+
+capLevelToPlayerSize:true,
+startLevel:-1,
+
+abrEwmaFastLive:5,
+abrEwmaSlowLive:15,
+
+fragLoadingTimeOut:30000,
+fragLoadingMaxRetry:8,
+
+manifestLoadingTimeOut:30000,
+manifestLoadingMaxRetry:8
+
+})
+
+}
+
+function play(){
+
+let line=list[index]
+
+if(!line.includes(" : ")) return
+
+let url=line.split(" : ")[1].trim()
+
+if(hls) hls.destroy()
+
+hls=createHls()
+
+hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
+
+hls.attachMedia(video)
+
+video.pause()
+
+highlight()
+
+}
+
 function load(){
+
+const playlist=document.getElementById("playlist")
 
 playlist.innerHTML=""
 
 list.forEach((item,i)=>{
 
-let name=item.split("|")[0]
-let url=item.split("|")[1]
+let name=item.split(" : ")[0]
 
 let div=document.createElement("div")
+
 div.className="item"
-div.innerText=name
+div.textContent=name
 
 div.onclick=()=>{
 index=i
-play(url)
-highlight()
+play()
 }
 
 playlist.appendChild(div)
@@ -217,113 +290,106 @@ playlist.appendChild(div)
 
 }
 
-function play(url){
+function next(){index++;play()}
+function prev(){index--;play()}
+function skip(s){video.currentTime+=s}
+
+function speed(v){
+
+video.playbackRate=1
+
+setTimeout(()=>{
+video.playbackRate=v
+},300)
 
 if(hls){
-hls.destroy()
-}
-
-if(Hls.isSupported()){
-
-hls=new Hls({
-maxBufferLength:30,
-maxMaxBufferLength:60,
-enableWorker:true
-})
-
-hls.loadSource(
-"https://nameless-mode-a54e.vicky2official1-90.workers.dev/?url="
-+ encodeURIComponent(url)
-)
-
-hls.attachMedia(video)
-
-hls.on(Hls.Events.MANIFEST_PARSED,function(){
-
-let q=document.getElementById("quality")
-
-q.innerHTML=""
-
-hls.levels.forEach((l,i)=>{
-q.innerHTML+=`<option value="${i}">${l.height}p</option>`
-})
-
-video.play()
-
-})
-
-}else{
-
-video.src=url
-video.play()
-
+hls.startLoad()
 }
 
 }
 
-function quality(i){
-
+function setQuality(level){
 if(hls){
-hls.currentLevel=parseInt(i)
+hls.currentLevel=parseInt(level)
+}
 }
 
-}
+function toggleFull(){
 
-function next(){
-index++
-if(index>=list.length) index=0
-play(list[index].split("|")[1])
-highlight()
-}
-
-function prev(){
-index--
-if(index<0) index=list.length-1
-play(list[index].split("|")[1])
-highlight()
-}
-
-function skip(t){
-video.currentTime+=t
-}
-
-function speed(s){
-video.playbackRate=s
-}
-
-function fullscreen(){
-
-let el=document.querySelector(".player")
+let elem=player
 
 if(!document.fullscreenElement){
-el.requestFullscreen()
+
+elem.requestFullscreen()
+
+if(screen.orientation){
+screen.orientation.lock("landscape").catch(()=>{})
+}
+
 }else{
+
 document.exitFullscreen()
+
+if(screen.orientation){
+screen.orientation.unlock()
 }
 
 }
 
-function highlight(){
-
-document.querySelectorAll(".item").forEach(x=>{
-x.classList.remove("active")
-})
-
-document.querySelectorAll(".item")[index].classList.add("active")
-
 }
 
-function search(){
+function searchVideo(){
 
 let val=document.getElementById("search").value.toLowerCase()
 
 document.querySelectorAll(".item").forEach(x=>{
 x.style.display=
-x.innerText.toLowerCase().includes(val)
+x.textContent.toLowerCase().includes(val)
 ?"block":"none"
 })
 
 }
+
+function highlight(){
+
+document.querySelectorAll(".item")
+.forEach(x=>x.classList.remove("active"))
+
+document.querySelectorAll(".item")[index]
+?.classList.add("active")
+
+}
+
+/* Buffer Fix */
+
+video.addEventListener("waiting",()=>{
+if(hls){
+hls.startLoad()
+}
+})
+
+video.addEventListener("stalled",()=>{
+if(hls){
+hls.startLoad()
+}
+})
+
+/* Controls auto hide */
+
+function showControls(){
+
+controls.classList.remove("hide")
+
+clearTimeout(hideTimer)
+
+hideTimer=setTimeout(()=>{
+controls.classList.add("hide")
+},3000)
+
+}
+
+player.addEventListener("mousemove",showControls)
+player.addEventListener("touchstart",showControls)
 
 </script>
 
