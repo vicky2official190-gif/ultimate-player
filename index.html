@@ -17,7 +17,7 @@ margin:0;
 overflow-x:hidden;
 }
 
-/* video container */
+/* Video container */
 
 .video-container{
 position:relative;
@@ -25,8 +25,6 @@ background:black;
 width:100%;
 height:50vh;
 }
-
-/* video */
 
 video{
 width:100%;
@@ -38,59 +36,52 @@ background:black;
 /* fullscreen */
 
 .video-container:fullscreen{
-width:100vw;
 height:100vh;
 }
 
 .video-container:fullscreen video{
-width:100vw;
-height:100vh;
-object-fit:contain;
-}
-
-/* mobile landscape fix */
-
-@media (orientation: landscape){
-
-.video-container{
 height:100vh;
 }
 
-video{
-height:100vh;
-}
-
-}
-
-/* controls */
+/* Controls BELOW progress bar */
 
 .controls{
-position:absolute;
-bottom:15px;
-left:50%;
-transform:translateX(-50%);
 display:flex;
+justify-content:center;
 gap:10px;
-background:rgba(0,0,0,0.7);
-padding:8px 12px;
-border-radius:10px;
-transition:opacity .3s;
-z-index:10;
-}
-
-.controls.hide{
-opacity:0;
-pointer-events:none;
+background:#111;
+padding:10px;
 }
 
 .controls button,
 .controls select{
-background:#111;
+background:#222;
 color:white;
 border:1px solid #444;
-padding:6px 10px;
+padding:6px 12px;
 cursor:pointer;
-border-radius:5px;
+border-radius:6px;
+}
+
+/* mobile */
+
+@media(max-width:768px){
+
+.video-container{
+height:40vh;
+}
+
+.controls{
+flex-wrap:wrap;
+gap:5px;
+}
+
+.controls button,
+.controls select{
+font-size:12px;
+padding:5px 8px;
+}
+
 }
 
 /* header */
@@ -132,18 +123,23 @@ background:#222;
 <body>
 
 <div class="video-container" id="videoContainer">
-
 <video id="video" controls playsinline webkit-playsinline></video>
+</div>
 
-<div class="controls" id="controls">
+<!-- Controls BELOW video -->
+
+<div class="controls">
 
 <button onclick="rewind()">⏪ 10s</button>
 <button onclick="forward()">⏩ 10s</button>
 
 <select onchange="changeSpeed(this.value)">
 <option value="0.5">0.5x</option>
+<option value="0.75">0.75x</option>
 <option value="1" selected>1x</option>
+<option value="1.25">1.25x</option>
 <option value="1.5">1.5x</option>
+<option value="1.75">1.75x</option>
 <option value="2">2x</option>
 </select>
 
@@ -158,8 +154,6 @@ background:#222;
 
 </div>
 
-</div>
-
 <div class="header">
 <div class="btn" onclick="loadList('videos')">Videos</div>
 <div class="btn" onclick="loadList('arithmetic')">Arithmetic</div>
@@ -171,11 +165,9 @@ background:#222;
 
 const video = document.getElementById('video');
 const playlist = document.getElementById('playlist');
-const controls = document.getElementById('controls');
 const videoContainer = document.getElementById('videoContainer');
 
 let currentHls;
-let hideTimeout;
 
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url=" + encodeURIComponent(url);
@@ -236,10 +228,7 @@ currentHls.destroy();
 }
 
 if(Hls.isSupported()){
-currentHls=new Hls({
-enableWorker:true
-});
-
+currentHls=new Hls();
 currentHls.loadSource(url);
 currentHls.attachMedia(video);
 
@@ -247,9 +236,9 @@ currentHls.on(Hls.Events.MANIFEST_PARSED,function(){
 video.play().catch(()=>{});
 });
 
-}else if(video.canPlayType('application/vnd.apple.mpegurl')){
+}else{
 video.src=url;
-video.play().catch(()=>{});
+video.play();
 }
 
 }
@@ -288,41 +277,12 @@ currentHls.currentLevel = index;
 function toggleFullscreen(){
 
 if(!document.fullscreenElement){
-
 videoContainer.requestFullscreen();
-
-if(screen.orientation && screen.orientation.lock){
-screen.orientation.lock('landscape').catch(()=>{});
-}
-
 }else{
-
 document.exitFullscreen();
-
-if(screen.orientation && screen.orientation.unlock){
-screen.orientation.unlock();
 }
 
 }
-
-}
-
-/* auto hide */
-
-function showControls(){
-controls.classList.remove("hide");
-
-clearTimeout(hideTimeout);
-
-hideTimeout=setTimeout(()=>{
-controls.classList.add("hide");
-},3000);
-}
-
-videoContainer.addEventListener("mousemove",showControls);
-videoContainer.addEventListener("touchstart",showControls);
-
-showControls();
 
 loadList("videos");
 
