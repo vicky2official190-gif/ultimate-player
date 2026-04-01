@@ -36,6 +36,15 @@ height:100%;
 object-fit:contain;
 }
 
+/* video title */
+
+.video-title{
+padding:10px;
+background:#111;
+font-size:14px;
+font-weight:500;
+}
+
 /* controls */
 
 .controls{
@@ -118,11 +127,14 @@ border-bottom:1px solid #333;
 cursor:pointer;
 }
 
+/* pdf viewer */
+
 .pdf-viewer{
 width:100%;
 height:80vh;
 border:none;
 display:none;
+background:white;
 }
 
 @media(max-width:768px){
@@ -180,6 +192,10 @@ height:30vh;
 
 </div>
 
+<div class="video-title" id="videoTitle">
+No video playing
+</div>
+
 <div class="header">
 
 <div class="btn" onclick="loadList('videos')">Videos</div>
@@ -205,6 +221,7 @@ const progressContainer=document.getElementById("progressContainer");
 const timeDisplay=document.getElementById("timeDisplay");
 const controls=document.getElementById("controls");
 const pdfViewer=document.getElementById("pdfViewer");
+const videoTitle=document.getElementById("videoTitle");
 
 let currentHls;
 let playbackSpeed=1;
@@ -333,9 +350,12 @@ quality.appendChild(option);
 
 /* play */
 
-function play(url){
+function play(url,title){
 
 pdfViewer.style.display="none";
+video.style.display="block";
+
+videoTitle.innerText=title;
 
 if(currentHls) currentHls.destroy();
 
@@ -365,12 +385,16 @@ video.play();
 
 /* pdf */
 
-function openPDF(url){
+function openPDF(url,title){
 
 video.pause();
 
+video.style.display="none";
 pdfViewer.style.display="block";
-pdfViewer.src="https://docs.google.com/gview?embedded=1&url="+url;
+
+videoTitle.innerText=title;
+
+pdfViewer.src=url;
 
 }
 
@@ -431,9 +455,9 @@ div.className="item";
 div.textContent=item.title;
 
 if(currentType==="arithmetic" || item.url.endsWith(".pdf")){
-div.onclick=()=>openPDF(item.url);
+div.onclick=()=>openPDF(item.url,item.title);
 }else{
-div.onclick=()=>play(proxy(item.url));
+div.onclick=()=>play(proxy(item.url),item.title);
 }
 
 playlist.appendChild(div);
