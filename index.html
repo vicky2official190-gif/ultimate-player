@@ -16,12 +16,16 @@ color:white;
 font-family:Arial;
 }
 
+/* sticky */
+
 .sticky-player{
 position:sticky;
 top:0;
 z-index:999;
 background:#000;
 }
+
+/* video */
 
 .video-container{
 position:relative;
@@ -36,11 +40,29 @@ height:100%;
 object-fit:contain;
 }
 
+/* pdf viewer */
+
+.pdf-viewer{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+border:none;
+display:none;
+background:white;
+z-index:2;
+}
+
+/* title */
+
 .video-title{
 padding:10px;
 background:#111;
 font-size:14px;
 }
+
+/* controls */
 
 .controls{
 position:absolute;
@@ -49,6 +71,7 @@ width:100%;
 background:linear-gradient(transparent,rgba(0,0,0,0.9));
 padding:10px;
 transition:.3s;
+z-index:3;
 }
 
 .controls.hide{
@@ -90,6 +113,8 @@ padding:6px 10px;
 cursor:pointer;
 }
 
+/* header */
+
 .header{
 display:flex;
 gap:10px;
@@ -114,24 +139,20 @@ color:white;
 padding:5px;
 }
 
+/* playlist */
+
 .item{
 padding:12px;
 border-bottom:1px solid #333;
 cursor:pointer;
 }
 
-.pdf-viewer{
-width:100%;
-height:85vh;
-border:none;
-display:none;
-background:white;
-}
-
 @media(max-width:768px){
+
 .video-container{
 height:30vh;
 }
+
 }
 
 </style>
@@ -145,6 +166,8 @@ height:30vh;
 <div class="video-container" id="videoContainer">
 
 <video id="video" playsinline></video>
+
+<iframe id="pdfViewer" class="pdf-viewer"></iframe>
 
 <div class="controls" id="controls">
 
@@ -186,28 +209,28 @@ No video playing
 </div>
 
 <div class="header">
+
 <div class="btn" onclick="loadList('videos')">Videos</div>
 <div class="btn" onclick="loadList('arithmetic')">Arithmetic</div>
 
 <div class="search">
 <input id="search" placeholder="Search" onkeyup="searchVideo()">
 </div>
+
 </div>
 
 </div>
 
 <div id="playlist"></div>
 
-<iframe id="pdfViewer" class="pdf-viewer"></iframe>
-
 <script>
 
 const video=document.getElementById("video");
+const pdfViewer=document.getElementById("pdfViewer");
 const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
 const timeDisplay=document.getElementById("timeDisplay");
 const controls=document.getElementById("controls");
-const pdfViewer=document.getElementById("pdfViewer");
 const videoTitle=document.getElementById("videoTitle");
 
 let currentHls;
@@ -217,26 +240,34 @@ let currentType="videos";
 let allItems=[];
 let currentVideoUrl="";
 
+/* proxy */
+
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
 
-/* Resume video */
+/* resume */
 
 video.addEventListener("timeupdate",()=>{
+
 if(currentVideoUrl){
 localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
 }
+
 });
 
-/* Auto hide controls */
+/* auto hide */
 
 function showControls(){
+
 controls.classList.remove("hide");
+
 clearTimeout(hideTimer);
+
 hideTimer=setTimeout(()=>{
 controls.classList.add("hide");
 },3000);
+
 }
 
 document.getElementById("videoContainer")
@@ -245,76 +276,106 @@ document.getElementById("videoContainer")
 document.getElementById("videoContainer")
 .addEventListener("touchstart",showControls);
 
-/* Format */
+/* format */
 
 function format(t){
+
 if(!t) return "0:00";
+
 let m=Math.floor(t/60);
 let s=Math.floor(t%60);
+
 return m+":"+(s<10?"0":"")+s;
+
 }
 
-/* Progress */
+/* progress */
 
 video.addEventListener("timeupdate",()=>{
+
 const percent=(video.currentTime/video.duration)*100;
 progress.style.width=percent+"%";
-timeDisplay.innerText=format(video.currentTime)+" / "+format(video.duration);
+
+timeDisplay.innerText=
+format(video.currentTime)+" / "+format(video.duration);
+
 });
 
-/* Seek */
+/* seek */
 
 progressContainer.addEventListener("click",(e)=>{
+
 const width=progressContainer.clientWidth;
 video.currentTime=(e.offsetX/width)*video.duration;
+
 });
 
-/* Skip */
+/* skip */
 
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
 
-/* Speed */
+/* speed */
 
 function changeSpeed(speed){
+
 playbackSpeed=parseFloat(speed);
 video.playbackRate=playbackSpeed;
+
 }
 
-/* Fullscreen */
+/* fullscreen */
 
 function toggleFullscreen(){
+
 const container=document.getElementById("videoContainer");
+
 if(!document.fullscreenElement){
+
 container.requestFullscreen();
+
 if(screen.orientation){
 screen.orientation.lock("landscape").catch(()=>{});
 }
+
 }else{
+
 document.exitFullscreen();
-}
+
 }
 
-/* Quality */
+}
+
+/* quality */
 
 function changeQuality(level){
+
 if(currentHls){
 currentHls.currentLevel=level;
 }
+
 }
 
 function setupQuality(){
+
 const quality=document.querySelector(".quality");
+
 quality.innerHTML='<option value="-1">Auto</option>';
+
 currentHls.levels.forEach((level,index)=>{
+
 const option=document.createElement("option");
+
 option.value=index;
 option.text=level.height+"p";
+
 quality.appendChild(option);
+
 });
+
 }
 
-/* Play */
+/* play */
 
 function play(url,title){
 
@@ -327,8 +388,6 @@ videoTitle.innerText=title;
 
 if(currentHls) currentHls.destroy();
 
-if(Hls.isSupported()){
-
 currentHls=new Hls();
 
 currentHls.loadSource(url);
@@ -337,45 +396,34 @@ currentHls.attachMedia(video);
 currentHls.on(Hls.Events.MANIFEST_PARSED,()=>{
 
 setupQuality();
-video.playbackRate=playbackSpeed;
 
 let saved=localStorage.getItem("progress_"+url);
 if(saved) video.currentTime=saved;
+
+video.playbackRate=playbackSpeed;
 
 video.play();
 
 });
 
-}else{
-
-video.src=url;
-
-video.onloadedmetadata=()=>{
-let saved=localStorage.getItem("progress_"+url);
-if(saved) video.currentTime=saved;
-};
-
-video.play();
-
 }
 
-}
-
-/* PDF Viewer */
+/* PDF viewer */
 
 function openPDF(url,title){
 
 video.pause();
-video.style.display="none";
 
+video.style.display="none";
 pdfViewer.style.display="block";
+
 videoTitle.innerText=title;
 
 pdfViewer.src=proxy(url);
 
 }
 
-/* Load */
+/* load */
 
 function loadList(type){
 
@@ -410,7 +458,7 @@ render(allItems);
 
 }
 
-/* Render */
+/* render */
 
 function render(list){
 
@@ -437,36 +485,17 @@ playlist.appendChild(div);
 
 }
 
-/* Search */
+/* search */
 
 function searchVideo(){
 
 const q=document.getElementById("search").value.toLowerCase();
+
 render(allItems.filter(i=>i.title.toLowerCase().includes(q)));
 
 }
 
 loadList("videos");
-
-/* Keyboard */
-
-document.addEventListener("keydown",(e)=>{
-
-if(e.code==="Space"){
-e.preventDefault();
-video.paused?video.play():video.pause();
-}
-
-if(e.key==="ArrowRight") forward();
-if(e.key==="ArrowLeft") rewind();
-
-});
-
-/* Double click */
-
-video.addEventListener("dblclick",()=>{
-video.paused?video.play():video.pause();
-});
 
 </script>
 
