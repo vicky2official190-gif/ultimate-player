@@ -28,12 +28,6 @@ background:black;
 object-fit:contain;
 }
 
-/* fullscreen video */
-
-.video-container:fullscreen video{
-height:100vh;
-}
-
 /* Controls */
 
 .controls{
@@ -62,27 +56,6 @@ border:1px solid #444;
 padding:6px 10px;
 cursor:pointer;
 border-radius:5px;
-}
-
-/* mobile responsive */
-
-@media(max-width:768px){
-
-video{
-height:40vh;
-}
-
-.controls{
-bottom:10px;
-gap:5px;
-}
-
-.controls button,
-.controls select{
-padding:5px 7px;
-font-size:12px;
-}
-
 }
 
 .header{
@@ -121,7 +94,8 @@ background:#222;
 
 <div class="video-container" id="videoContainer">
 
-<video id="video"></video>
+<!-- FIX: controls enabled -->
+<video id="video" controls playsinline webkit-playsinline></video>
 
 <div class="controls" id="controls">
 
@@ -224,18 +198,25 @@ currentHls.destroy();
 }
 
 if(Hls.isSupported()){
-currentHls=new Hls();
+currentHls=new Hls({
+enableWorker:true
+});
+
 currentHls.loadSource(url);
 currentHls.attachMedia(video);
-video.play();
-}else{
+
+currentHls.on(Hls.Events.MANIFEST_PARSED,function(){
+video.play().catch(()=>{});
+});
+
+}else if(video.canPlayType('application/vnd.apple.mpegurl')){
 video.src=url;
-video.play();
+video.play().catch(()=>{});
 }
 
 }
 
-/* 10 sec controls */
+/* skip */
 
 function rewind(){
 video.currentTime -= 10;
@@ -264,7 +245,7 @@ currentHls.currentLevel = index;
 }
 }
 
-/* fullscreen + rotate mobile */
+/* fullscreen */
 
 function toggleFullscreen(){
 
@@ -286,7 +267,7 @@ screen.orientation.unlock();
 
 }
 
-/* auto hide controls */
+/* auto hide */
 
 function showControls(){
 controls.classList.remove("hide");
