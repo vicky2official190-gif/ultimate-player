@@ -64,12 +64,21 @@ flex-direction:column;
 #playerContainer{
 flex:1;
 position:relative;
+background:black;
 }
 
 video{
 width:100%;
 height:100%;
 object-fit:contain;
+}
+
+#pdfViewer{
+width:100%;
+height:100%;
+display:none;
+border:none;
+background:white;
 }
 
 /* Controls */
@@ -99,6 +108,20 @@ padding:6px 8px;
 background:#111;
 color:white;
 border:1px solid #333;
+}
+
+/* Download Button */
+
+.downloadBtn{
+position:absolute;
+top:10px;
+right:10px;
+padding:6px 10px;
+background:#111;
+color:white;
+border:1px solid #333;
+display:none;
+z-index:999;
 }
 
 /* Mobile */
@@ -134,6 +157,10 @@ height:calc(100vh - 220px);
 <div id="playerContainer">
 
 <video id="video" controls playsinline></video>
+
+<iframe id="pdfViewer"></iframe>
+
+<button id="downloadBtn" class="downloadBtn">Download PDF</button>
 
 <div class="controls" id="controls">
 
@@ -191,6 +218,8 @@ let hls
 let hideTimer
 
 const video=document.getElementById("video")
+const pdf=document.getElementById("pdfViewer")
+const downloadBtn=document.getElementById("downloadBtn")
 const controls=document.getElementById("controls")
 const player=document.getElementById("playerContainer")
 
@@ -214,21 +243,38 @@ if(!line.includes(" : ")) return
 
 let url=line.split(" : ")[1].trim()
 
+/* PDF Mode */
+
+if(url.toLowerCase().endsWith(".pdf")){
+
+video.style.display="none"
+pdf.style.display="block"
+
+downloadBtn.style.display="block"
+downloadBtn.onclick=()=>window.open(url)
+
+pdf.src=url
+
+return
+
+}
+
+/* Video Mode */
+
+pdf.style.display="none"
+video.style.display="block"
+downloadBtn.style.display="none"
+
 if(hls) hls.destroy()
 
 hls=new Hls({
 enableWorker:true,
 maxBufferLength:20,
-maxMaxBufferLength:40,
-backBufferLength:60,
-startLevel:-1,
-capLevelToPlayerSize:true
+startLevel:-1
 })
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
 hls.attachMedia(video)
-
-video.pause()
 
 highlight()
 
@@ -277,25 +323,9 @@ function toggleFull(){
 let elem=document.getElementById("playerContainer")
 
 if(!document.fullscreenElement){
-
-if(elem.requestFullscreen){
 elem.requestFullscreen()
-}
-
-if(screen.orientation && screen.orientation.lock){
-screen.orientation.lock('landscape').catch(()=>{})
-}
-
 }else{
-
-if(document.exitFullscreen){
 document.exitFullscreen()
-}
-
-if(screen.orientation && screen.orientation.unlock){
-screen.orientation.unlock()
-}
-
 }
 
 }
@@ -322,7 +352,7 @@ document.querySelectorAll(".item")[index]
 
 }
 
-/* Controls auto hide */
+/* Controls Auto Hide */
 
 function showControls(){
 
@@ -338,8 +368,6 @@ controls.classList.add("hide")
 
 player.addEventListener("mousemove",showControls)
 player.addEventListener("touchstart",showControls)
-video.addEventListener("play",showControls)
-video.addEventListener("pause",()=>controls.classList.remove("hide"))
 
 </script>
 
