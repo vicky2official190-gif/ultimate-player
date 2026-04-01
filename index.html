@@ -1,3 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Player</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+
+body{
+margin:0;
+background:#000;
+font-family:Arial;
+color:white;
+}
+
+/* VIDEO */
+
+.video-container{
+position:relative;
+width:100%;
+height:50vh;
+background:black;
+}
+
+video{
+width:100%;
+height:100%;
+object-fit:contain;
+}
+
+/* CONTROLS */
+
+.controls{
+position:absolute;
+bottom:0;
+width:100%;
+background:linear-gradient(transparent,rgba(0,0,0,.9));
+padding:8px;
+transition:.3s;
+}
+
+.controls.hide{
+opacity:0;
+}
+
+/* PROGRESS */
+
+.progress-container{
+width:100%;
+height:4px;
+background:#444;
+cursor:pointer;
+margin-bottom:8px;
+}
+
+.progress{
+height:100%;
+width:0%;
+background:red;
+}
+
+/* ROW */
+
+.controls-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+/* LEFT RIGHT */
+
+.left-controls,
+.right-controls{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+button{
+background:none;
+border:none;
+color:white;
+font-size:18px;
+cursor:pointer;
+}
+
+.volume{
+width:80px;
+}
+
+select{
+background:#111;
+color:white;
+border:1px solid #444;
+padding:3px;
+}
+
+/* HEADER */
+
+.header{
+display:flex;
+gap:10px;
+padding:10px;
+background:#111;
+}
+
+.btn{
+background:#222;
+padding:6px 12px;
+cursor:pointer;
+border-radius:6px;
+}
+
+.search{
+margin-left:auto;
+}
+
+.search input{
+background:#222;
+border:1px solid #444;
+color:white;
+padding:5px;
+}
+
+/* PLAYLIST */
+
+.item{
+padding:12px;
+border-bottom:1px solid #333;
+cursor:pointer;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+.video-container{
+height:30vh;
+}
+
+button{
+font-size:22px;
+}
+
+.volume{
+width:60px;
+}
+
+}
+
+/* FULLSCREEN */
+
+.video-container:fullscreen{
+height:100vh;
+}
+
+.video-container:fullscreen video{
+height:100vh;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="video-container" id="videoContainer">
+
+<video id="video" playsinline></video>
+
 <div class="controls" id="controls">
 
 <div class="progress-container" id="progressContainer">
@@ -7,11 +180,13 @@
 <div class="controls-row">
 
 <div class="left-controls">
+
 <button onclick="togglePlay()">⏯</button>
 <button onclick="rewind()">⏪</button>
 <button onclick="forward()">⏩</button>
 
 <span id="time">00:00 / 00:00</span>
+
 </div>
 
 <div class="right-controls">
@@ -19,17 +194,17 @@
 <input type="range" min="0" max="1" step="0.01"
 oninput="video.volume=this.value" class="volume">
 
-<select onchange="changeSpeed(this.value)" class="speed">
-<option>0.5x</option>
-<option>0.75x</option>
-<option selected>1x</option>
-<option>1.25x</option>
-<option>1.5x</option>
-<option>1.75x</option>
-<option>2x</option>
+<select onchange="changeSpeed(this.value)">
+<option>0.5</option>
+<option>0.75</option>
+<option selected>1</option>
+<option>1.25</option>
+<option>1.5</option>
+<option>1.75</option>
+<option>2</option>
 </select>
 
-<select onchange="changeQuality(this.value)" class="quality">
+<select class="quality" onchange="changeQuality(this.value)">
 <option value="-1">Auto</option>
 </select>
 
@@ -40,3 +215,276 @@ oninput="video.volume=this.value" class="volume">
 </div>
 
 </div>
+
+</div>
+
+<div class="header">
+
+<div class="btn" onclick="loadList('videos')">Videos</div>
+<div class="btn" onclick="loadList('arithmetic')">Arithmetic</div>
+
+<div class="search">
+<input id="search" placeholder="Search" onkeyup="searchVideo()">
+</div>
+
+</div>
+
+<div id="playlist"></div>
+
+<script>
+
+const video=document.getElementById("video");
+const progress=document.getElementById("progress");
+const progressContainer=document.getElementById("progressContainer");
+const controls=document.getElementById("controls");
+const time=document.getElementById("time");
+
+let currentHls;
+let hideTimer;
+
+/* PLAY */
+
+function togglePlay(){
+video.paused ? video.play() : video.pause();
+}
+
+/* SKIP */
+
+function rewind(){ video.currentTime-=10 }
+function forward(){ video.currentTime+=10 }
+
+/* PROGRESS */
+
+video.addEventListener("timeupdate",()=>{
+
+const percent=(video.currentTime/video.duration)*100;
+progress.style.width=percent+"%";
+
+time.innerText=
+format(video.currentTime)+" / "+format(video.duration);
+
+});
+
+/* SEEK */
+
+progressContainer.addEventListener("click",(e)=>{
+
+const width=progressContainer.clientWidth;
+video.currentTime=(e.offsetX/width)*video.duration;
+
+});
+
+/* FORMAT */
+
+function format(t){
+
+if(!t) return "00:00";
+
+let m=Math.floor(t/60);
+let s=Math.floor(t%60);
+
+return `${m}:${s<10?"0":""}${s}`;
+
+}
+
+/* FULLSCREEN + ROTATE */
+
+function toggleFullscreen(){
+
+const container=document.getElementById("videoContainer");
+
+if(!document.fullscreenElement){
+
+container.requestFullscreen();
+
+if(screen.orientation){
+screen.orientation.lock("landscape").catch(()=>{});
+}
+
+}else{
+
+document.exitFullscreen();
+
+if(screen.orientation){
+screen.orientation.unlock();
+}
+
+}
+
+}
+
+/* SPEED */
+
+function changeSpeed(s){
+video.playbackRate=s;
+}
+
+/* AUTO HIDE */
+
+function showControls(){
+
+controls.classList.remove("hide");
+
+clearTimeout(hideTimer);
+
+hideTimer=setTimeout(()=>{
+controls.classList.add("hide");
+},3000);
+
+}
+
+document.getElementById("videoContainer")
+.addEventListener("mousemove",showControls);
+
+document.getElementById("videoContainer")
+.addEventListener("touchstart",showControls);
+
+/* KEYBOARD */
+
+document.addEventListener("keydown",(e)=>{
+
+if(e.code==="Space"){
+e.preventDefault();
+togglePlay();
+}
+
+if(e.key==="ArrowRight") forward();
+if(e.key==="ArrowLeft") rewind();
+
+});
+
+/* DOUBLE CLICK */
+
+video.addEventListener("dblclick",togglePlay);
+
+/* QUALITY */
+
+function changeQuality(level){
+
+if(currentHls){
+currentHls.currentLevel=level;
+}
+
+}
+
+function setupQuality(){
+
+const quality=document.querySelector(".quality");
+
+quality.innerHTML='<option value="-1">Auto</option>';
+
+currentHls.levels.forEach((level,index)=>{
+
+const option=document.createElement("option");
+
+option.value=index;
+option.text=level.height+"p";
+
+quality.appendChild(option);
+
+});
+
+}
+
+/* HLS PLAY */
+
+function play(url){
+
+if(currentHls) currentHls.destroy();
+
+if(Hls.isSupported()){
+
+currentHls=new Hls();
+
+currentHls.loadSource(url);
+currentHls.attachMedia(video);
+
+currentHls.on(Hls.Events.MANIFEST_PARSED,()=>{
+
+setupQuality();
+video.play();
+
+});
+
+}else{
+
+video.src=url;
+video.play();
+
+}
+
+}
+
+/* PLAYLIST */
+
+let allItems=[];
+const playlist=document.getElementById("playlist");
+
+function proxy(url){
+return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
+}
+
+function loadList(type){
+
+let url= type==="videos"
+? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
+: "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
+
+fetch(url).then(r=>r.text()).then(data=>{
+
+allItems=[];
+
+data.split("\n").forEach(line=>{
+
+if(line.includes("http")){
+
+const parts=line.split(":");
+
+allItems.push({
+title:parts[0],
+url:parts.slice(1).join(":").trim()
+});
+
+}
+
+});
+
+render(allItems);
+
+});
+
+}
+
+function render(list){
+
+playlist.innerHTML="";
+
+list.forEach(item=>{
+
+const div=document.createElement("div");
+
+div.className="item";
+div.textContent=item.title;
+
+div.onclick=()=>play(proxy(item.url));
+
+playlist.appendChild(div);
+
+});
+
+}
+
+function searchVideo(){
+
+const q=document.getElementById("search").value.toLowerCase();
+
+render(allItems.filter(i=>i.title.toLowerCase().includes(q)));
+
+}
+
+loadList("videos");
+
+</script>
+
+</body>
+</html>
