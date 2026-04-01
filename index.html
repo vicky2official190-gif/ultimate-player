@@ -134,7 +134,7 @@ height:calc(100vh - 220px);
 
 <div id="playerContainer">
 
-<video id="video" controls playsinline></video>
+<video id="video" controls playsinline preload="metadata"></video>
 
 <div class="controls" id="controls">
 
@@ -212,6 +212,36 @@ load()
 
 }
 
+function createHls(){
+
+return new Hls({
+
+enableWorker:true,
+lowLatencyMode:false,
+
+backBufferLength:120,
+
+maxBufferLength:40,
+maxMaxBufferLength:80,
+
+maxBufferSize:120*1000*1000,
+
+capLevelToPlayerSize:true,
+startLevel:-1,
+
+abrEwmaFastLive:5,
+abrEwmaSlowLive:15,
+
+fragLoadingTimeOut:30000,
+fragLoadingMaxRetry:8,
+
+manifestLoadingTimeOut:30000,
+manifestLoadingMaxRetry:8
+
+})
+
+}
+
 function play(){
 
 let line=list[index]
@@ -222,26 +252,10 @@ let url=line.split(" : ")[1].trim()
 
 if(hls) hls.destroy()
 
-/* Enhanced Performance */
-
-hls=new Hls({
-
-enableWorker:true,
-lowLatencyMode:false,
-
-backBufferLength:90,
-maxBufferLength:25,
-maxMaxBufferLength:50,
-
-capLevelToPlayerSize:true,
-startLevel:-1,
-
-abrEwmaFastLive:3,
-abrEwmaSlowLive:9
-
-})
+hls=createHls()
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
+
 hls.attachMedia(video)
 
 video.pause()
@@ -286,16 +300,18 @@ video.playbackRate=1
 
 setTimeout(()=>{
 video.playbackRate=v
-},200)
+},300)
+
+if(hls){
+hls.startLoad()
+}
 
 }
 
 function setQuality(level){
-
 if(hls){
 hls.currentLevel=parseInt(level)
 }
-
 }
 
 function toggleFull(){
@@ -344,7 +360,21 @@ document.querySelectorAll(".item")[index]
 
 }
 
-/* Controls Auto Hide */
+/* Buffer Fix */
+
+video.addEventListener("waiting",()=>{
+if(hls){
+hls.startLoad()
+}
+})
+
+video.addEventListener("stalled",()=>{
+if(hls){
+hls.startLoad()
+}
+})
+
+/* Controls auto hide */
 
 function showControls(){
 
