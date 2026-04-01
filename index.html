@@ -31,7 +31,7 @@ flex-direction:column;
 }
 
 .logo{
-padding:15px;
+padding:12px;
 background:#000;
 font-weight:bold;
 }
@@ -54,6 +54,10 @@ overflow:auto;
 padding:12px;
 border-bottom:1px solid #222;
 cursor:pointer;
+}
+
+.item:hover{
+background:#222;
 }
 
 .active{
@@ -111,21 +115,22 @@ color:white;
 border:1px solid #333;
 }
 
-/* Mobile Layout Fix */
+/* Mobile Fix */
 
 @media(max-width:768px){
 
 body{
-overflow:auto;
+overflow:hidden;
 }
 
 .container{
 flex-direction:column;
-height:auto;
+height:100vh;
 }
 
 .main{
-height:auto;
+height:220px;
+flex:none;
 }
 
 #playerContainer{
@@ -133,13 +138,22 @@ height:220px;
 }
 
 .sidebar{
-width:100%;
-height:auto;
+height:calc(100vh - 220px);
+display:flex;
+flex-direction:column;
+}
+
+.logo{
+flex:none;
+}
+
+.topbar{
+flex:none;
 }
 
 #playlist{
-height:auto;
-overflow:visible;
+flex:1;
+overflow-y:auto;
 }
 
 }
@@ -174,7 +188,7 @@ overflow:visible;
 </select>
 
 <select id="quality" onchange="setQuality(this.value)">
-<option value="-1">Auto</option>
+<option value="-1" selected>Auto</option>
 </select>
 
 <button onclick="toggleFull()">⛶</button>
@@ -253,7 +267,8 @@ hls = new Hls({
 maxBufferLength:30,
 startLevel:2,
 capLevelToPlayerSize:true,
-lowLatencyMode:true
+lowLatencyMode:true,
+enableWorker:true
 })
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
@@ -330,9 +345,21 @@ function toggleFull(){
 let player=document.getElementById("playerContainer")
 
 if(!document.fullscreenElement){
+
 player.requestFullscreen()
+
+if(screen.orientation && screen.orientation.lock){
+screen.orientation.lock("landscape")
+}
+
 }else{
+
 document.exitFullscreen()
+
+if(screen.orientation){
+screen.orientation.unlock()
+}
+
 }
 
 }
@@ -349,7 +376,7 @@ x.textContent.toLowerCase().includes(val)
 
 }
 
-/* Auto hide */
+/* Auto hide controls */
 
 const controls=document.getElementById("controls")
 const player=document.getElementById("playerContainer")
