@@ -13,7 +13,6 @@ margin:0;
 background:black;
 color:white;
 font-family:Arial;
-overflow:hidden;
 }
 
 /* Layout */
@@ -28,17 +27,11 @@ width:300px;
 background:#111;
 display:flex;
 flex-direction:column;
-transition:.3s;
-}
-
-.sidebar.hide{
-left:-100%;
 }
 
 .logo{
 padding:15px;
 background:#000;
-font-size:18px;
 }
 
 .topbar{
@@ -59,10 +52,6 @@ border-bottom:1px solid #222;
 cursor:pointer;
 }
 
-.item:hover{
-background:#222;
-}
-
 .active{
 background:#333;
 }
@@ -78,76 +67,55 @@ flex-direction:column;
 #playerContainer{
 flex:1;
 position:relative;
-background:black;
 }
 
 video{
 width:100%;
 height:100%;
 object-fit:contain;
+background:black;
 }
 
 /* Controls */
 
 .controls{
-position:absolute;
-bottom:10px;
-left:50%;
-transform:translateX(-50%);
 display:flex;
+justify-content:center;
 gap:8px;
-background:rgba(0,0,0,.6);
-padding:8px;
-border-radius:12px;
-transition:.3s;
-}
-
-.controls.hide{
-opacity:0;
-pointer-events:none;
+padding:10px;
+background:#000;
+flex-wrap:wrap;
 }
 
 button,select{
 background:#111;
 color:white;
 border:1px solid #333;
-padding:6px 8px;
-border-radius:6px;
+padding:8px 10px;
 }
 
 /* Mobile */
-
-.mobile-toggle{
-display:none;
-padding:10px;
-background:black;
-}
 
 @media(max-width:768px){
 
 .container{
 flex-direction:column;
+height:auto;
 }
 
 .sidebar{
-position:absolute;
-height:100%;
-z-index:999;
-left:-100%;
+width:100%;
+height:40vh;
+order:2;
 }
 
-.sidebar.show{
-left:0;
+.main{
+order:1;
+height:60vh;
 }
 
-.mobile-toggle{
-display:block;
-}
-
-.controls{
-width:95%;
-justify-content:center;
-flex-wrap:wrap;
+#playerContainer{
+height:40vh;
 }
 
 }
@@ -158,16 +126,12 @@ flex-wrap:wrap;
 
 <body>
 
-<div class="mobile-toggle" onclick="toggleSidebar()">
-☰ Lectures
-</div>
-
 <div class="container">
 
-<div class="sidebar" id="sidebar">
+<div class="sidebar">
 
 <div class="logo">
-Ultimate Player
+🎬 Ultimate Player
 </div>
 
 <div class="topbar">
@@ -196,11 +160,13 @@ style="flex:1"
 
 <video id="video" playsinline controls></video>
 
-<div class="controls" id="controls">
+</div>
+
+<div class="controls">
 
 <button onclick="prev()">⏮</button>
-<button onclick="skip(-10)">⏪</button>
-<button onclick="skip(10)">⏩</button>
+<button onclick="skip(-10)">⏪ 10s</button>
+<button onclick="skip(10)">⏩ 10s</button>
 <button onclick="next()">⏭</button>
 
 <select onchange="speed(this.value)">
@@ -211,13 +177,11 @@ style="flex:1"
 <option value="2">2x</option>
 </select>
 
-<select onchange="quality(this.value)" id="quality">
+<select id="quality" onchange="setQuality(this.value)">
 <option value="-1">Auto</option>
 </select>
 
 <button onclick="toggleFull()">⛶</button>
-
-</div>
 
 </div>
 
@@ -233,8 +197,6 @@ let hls
 
 const video=document.getElementById("video")
 const playlist=document.getElementById("playlist")
-const controls=document.getElementById("controls")
-const player=document.getElementById("playerContainer")
 
 loadTxt("videos.txt")
 
@@ -273,12 +235,12 @@ hls.on(Hls.Events.MANIFEST_PARSED, function(){
 
 video.play()
 
-let quality=document.getElementById("quality")
+let q=document.getElementById("quality")
 
-quality.innerHTML='<option value="-1">Auto</option>'
+q.innerHTML='<option value="-1">Auto</option>'
 
 hls.levels.forEach((l,i)=>{
-quality.innerHTML+=`<option value="${i}">${l.height}p</option>`
+q.innerHTML+=`<option value="${i}">${l.height}p</option>`
 })
 
 })
@@ -287,9 +249,46 @@ highlight()
 
 }
 
-/* Quality */
+function load(){
 
-function quality(level){
+playlist.innerHTML=""
+
+list.forEach((item,i)=>{
+
+let name=item.split(" : ")[0]
+
+let div=document.createElement("div")
+
+div.className="item"
+div.textContent=name
+
+div.onclick=()=>{
+index=i
+play()
+}
+
+playlist.appendChild(div)
+
+})
+
+}
+
+function highlight(){
+
+document.querySelectorAll(".item")
+.forEach(x=>x.classList.remove("active"))
+
+document.querySelectorAll(".item")[index]
+?.classList.add("active")
+
+}
+
+function next(){index++;play()}
+function prev(){index--;play()}
+function skip(s){video.currentTime+=s}
+function speed(v){video.playbackRate=v}
+
+function setQuality(level){
 
 if(hls){
 hls.currentLevel=parseInt(level)
@@ -297,19 +296,11 @@ hls.currentLevel=parseInt(level)
 
 }
 
-/* Controls */
-
-function next(){index++;play()}
-function prev(){index--;play()}
-function skip(s){video.currentTime+=s}
-
-function speed(v){
-video.playbackRate=v
-}
-
-/* Fullscreen + rotate */
+/* Rotate Fullscreen */
 
 function toggleFull(){
+
+let player=document.getElementById("playerContainer")
 
 if(!document.fullscreenElement){
 
@@ -331,14 +322,6 @@ screen.orientation.unlock()
 
 }
 
-/* Sidebar */
-
-function toggleSidebar(){
-document.getElementById("sidebar").classList.toggle("show")
-}
-
-/* Search */
-
 function searchVideo(){
 
 let val=document.getElementById("search").value.toLowerCase()
@@ -350,61 +333,6 @@ x.textContent.toLowerCase().includes(val)
 })
 
 }
-
-/* Playlist */
-
-function load(){
-
-playlist.innerHTML=""
-
-list.forEach((item,i)=>{
-
-let name=item.split(" : ")[0]
-
-let div=document.createElement("div")
-
-div.className="item"
-div.textContent=name
-
-div.onclick=()=>{
-index=i
-play()
-toggleSidebar()
-}
-
-playlist.appendChild(div)
-
-})
-
-}
-
-function highlight(){
-
-document.querySelectorAll(".item")
-.forEach(x=>x.classList.remove("active"))
-
-document.querySelectorAll(".item")[index]?.classList.add("active")
-
-}
-
-/* Auto hide controls */
-
-let timer
-
-function showControls(){
-
-controls.classList.remove("hide")
-
-clearTimeout(timer)
-
-timer=setTimeout(()=>{
-controls.classList.add("hide")
-},3000)
-
-}
-
-player.addEventListener("mousemove",showControls)
-player.addEventListener("touchstart",showControls)
 
 </script>
 
