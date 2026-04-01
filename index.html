@@ -21,8 +21,6 @@ display:flex;
 height:100vh;
 }
 
-/* Sidebar */
-
 .sidebar{
 width:300px;
 background:#111;
@@ -38,8 +36,6 @@ font-weight:bold;
 background:#000;
 }
 
-/* Sticky Topbar */
-
 .topbar{
 padding:10px;
 display:flex;
@@ -49,8 +45,6 @@ top:0;
 background:#111;
 z-index:10;
 }
-
-/* Playlist */
 
 #playlist{
 overflow-y:auto;
@@ -70,8 +64,6 @@ background:#222;
 .active{
 background:#333;
 }
-
-/* Player */
 
 .main{
 flex:1;
@@ -93,8 +85,6 @@ height:100%;
 object-fit:contain;
 background:black;
 }
-
-/* Controls */
 
 .controls{
 display:flex;
@@ -140,8 +130,6 @@ cursor:pointer;
 
 <div class="container">
 
-<!-- Sidebar -->
-
 <div class="sidebar">
 
 <div class="logo">
@@ -168,8 +156,6 @@ style="flex:1"
 <div id="playlist"></div>
 
 </div>
-
-<!-- Player -->
 
 <div class="main">
 
@@ -268,8 +254,8 @@ if(hls) hls.destroy()
 
 hls = createHls()
 
-// MOBILE FIX (IMPORTANT)
-let proxyUrl = "https://corsproxy.io/?"+encodeURIComponent(url)
+// IMPORTANT PROXY (VERCEL)
+let proxyUrl = "/api/proxy?url=" + encodeURIComponent(url)
 
 hls.loadSource(proxyUrl)
 
@@ -279,8 +265,7 @@ hls.on(Hls.Events.MANIFEST_PARSED,function(){
 video.play()
 })
 
-}
-else{
+}else{
 
 video.src=url
 video.play()
@@ -378,8 +363,6 @@ document.querySelectorAll(".item")[index]
 ?.classList.add("active")
 
 }
-
-/* Auto hide controls */
 
 let controlTimer
 
