@@ -18,15 +18,23 @@ margin:0;
 
 .video-container{
 position:relative;
+background:black;
 }
 
 video{
 width:100%;
 height:50vh;
 background:black;
+object-fit:contain;
 }
 
-/* Controls Bottom Center */
+/* fullscreen video */
+
+.video-container:fullscreen video{
+height:100vh;
+}
+
+/* Controls */
 
 .controls{
 position:absolute;
@@ -56,7 +64,7 @@ cursor:pointer;
 border-radius:5px;
 }
 
-/* Responsive */
+/* mobile responsive */
 
 @media(max-width:768px){
 
@@ -133,6 +141,8 @@ background:#222;
 <option value="360">360p</option>
 <option value="240">240p</option>
 </select>
+
+<button onclick="toggleFullscreen()">⛶</button>
 
 </div>
 
@@ -225,6 +235,8 @@ video.play();
 
 }
 
+/* 10 sec controls */
+
 function rewind(){
 video.currentTime -= 10;
 }
@@ -233,9 +245,13 @@ function forward(){
 video.currentTime += 10;
 }
 
+/* speed */
+
 function changeSpeed(speed){
 video.playbackRate = speed;
 }
+
+/* quality */
 
 function changeQuality(q){
 if(currentHls){
@@ -248,7 +264,29 @@ currentHls.currentLevel = index;
 }
 }
 
-/* Auto hide controls */
+/* fullscreen + rotate mobile */
+
+function toggleFullscreen(){
+
+if(!document.fullscreenElement){
+videoContainer.requestFullscreen();
+
+if(screen.orientation && screen.orientation.lock){
+screen.orientation.lock('landscape').catch(()=>{});
+}
+
+}else{
+document.exitFullscreen();
+
+if(screen.orientation && screen.orientation.unlock){
+screen.orientation.unlock();
+}
+
+}
+
+}
+
+/* auto hide controls */
 
 function showControls(){
 controls.classList.remove("hide");
