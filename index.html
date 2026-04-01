@@ -31,15 +31,14 @@ height:100%;
 object-fit:contain;
 }
 
-/* controls */
+/* Controls */
 
 .controls{
 position:absolute;
 bottom:0;
 width:100%;
-background:linear-gradient(transparent,rgba(0,0,0,0.8));
+background:linear-gradient(transparent,rgba(0,0,0,0.9));
 padding:10px;
-box-sizing:border-box;
 transition:opacity .3s;
 }
 
@@ -47,7 +46,7 @@ transition:opacity .3s;
 opacity:0;
 }
 
-/* progress */
+/* Progress */
 
 .progress-container{
 width:100%;
@@ -60,10 +59,10 @@ margin-bottom:8px;
 .progress{
 height:100%;
 width:0%;
-background:red;
+background:#ff0000;
 }
 
-/* buttons */
+/* Control row */
 
 .controls-row{
 display:flex;
@@ -71,11 +70,13 @@ align-items:center;
 gap:10px;
 }
 
+/* Buttons */
+
 button{
 background:none;
 border:none;
 color:white;
-font-size:16px;
+font-size:18px;
 cursor:pointer;
 }
 
@@ -96,6 +97,7 @@ background:#111;
 background:#222;
 padding:6px 12px;
 cursor:pointer;
+border-radius:6px;
 }
 
 .search{
@@ -107,22 +109,51 @@ background:#222;
 border:1px solid #444;
 color:white;
 padding:5px;
+border-radius:5px;
 }
 
 /* playlist */
 
 .item{
-padding:10px;
+padding:12px;
 border-bottom:1px solid #333;
 cursor:pointer;
 }
 
+/* MOBILE UI */
+
 @media(max-width:768px){
 
 .video-container{
-height:35vh;
+height:30vh;
 }
 
+.controls{
+padding:8px;
+}
+
+button{
+font-size:22px;
+}
+
+.controls-row{
+justify-content:space-between;
+}
+
+input[type="range"]{
+width:70px;
+}
+
+}
+
+/* Fullscreen */
+
+.video-container:fullscreen{
+height:100vh;
+}
+
+.video-container:fullscreen video{
+height:100vh;
 }
 
 </style>
@@ -133,7 +164,7 @@ height:35vh;
 
 <div class="video-container" id="videoContainer">
 
-<video id="video" playsinline></video>
+<video id="video" playsinline webkit-playsinline></video>
 
 <div class="controls" id="controls">
 
@@ -143,7 +174,7 @@ height:35vh;
 
 <div class="controls-row">
 
-<button onclick="togglePlay()">▶</button>
+<button onclick="togglePlay()">⏯</button>
 
 <button onclick="rewind()">⏪</button>
 <button onclick="forward()">⏩</button>
@@ -190,6 +221,7 @@ const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
 const controls=document.getElementById("controls");
 const time=document.getElementById("time");
+const container=document.getElementById("videoContainer");
 
 let currentHls;
 let hideTimer;
@@ -198,24 +230,18 @@ function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
 
-/* play */
+/* Play */
 
 function togglePlay(){
-
-if(video.paused){
-video.play();
-}else{
-video.pause();
+video.paused ? video.play() : video.pause();
 }
 
-}
-
-/* skip */
+/* Skip */
 
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
 
-/* progress */
+/* Progress */
 
 video.addEventListener("timeupdate",()=>{
 
@@ -227,50 +253,55 @@ format(video.currentTime)+" / "+format(video.duration);
 
 });
 
-/* click seek */
+/* Seek */
 
 progressContainer.addEventListener("click",(e)=>{
 
 const width=progressContainer.clientWidth;
-const click=e.offsetX;
-video.currentTime=(click/width)*video.duration;
+video.currentTime=(e.offsetX/width)*video.duration;
 
 });
 
-/* format */
+/* Format */
 
 function format(t){
-
 if(!t) return "00:00";
-
 let m=Math.floor(t/60);
 let s=Math.floor(t%60);
-
 return `${m}:${s<10?"0":""}${s}`;
-
 }
 
-/* fullscreen */
+/* Fullscreen + Rotate */
 
 function toggleFullscreen(){
 
-const container=document.getElementById("videoContainer");
-
 if(!document.fullscreenElement){
+
 container.requestFullscreen();
+
+if(screen.orientation && screen.orientation.lock){
+screen.orientation.lock('landscape').catch(()=>{});
+}
+
 }else{
+
 document.exitFullscreen();
+
+if(screen.orientation && screen.orientation.unlock){
+screen.orientation.unlock();
 }
 
 }
 
-/* speed */
+}
+
+/* Speed */
 
 function changeSpeed(s){
 video.playbackRate=s;
 }
 
-/* auto hide */
+/* Auto hide */
 
 function showControls(){
 
@@ -284,13 +315,10 @@ controls.classList.add("hide");
 
 }
 
-document.getElementById("videoContainer")
-.addEventListener("mousemove",showControls);
+container.addEventListener("mousemove",showControls);
+container.addEventListener("touchstart",showControls);
 
-document.getElementById("videoContainer")
-.addEventListener("touchstart",showControls);
-
-/* keyboard */
+/* Keyboard */
 
 document.addEventListener("keydown",(e)=>{
 
@@ -304,11 +332,29 @@ if(e.key==="ArrowLeft") rewind();
 
 });
 
-/* double click */
+/* Double tap */
 
 video.addEventListener("dblclick",togglePlay);
 
-/* load list */
+/* HLS */
+
+function play(url){
+
+if(currentHls) currentHls.destroy();
+
+if(Hls.isSupported()){
+currentHls=new Hls();
+currentHls.loadSource(url);
+currentHls.attachMedia(video);
+}else{
+video.src=url;
+}
+
+video.play();
+
+}
+
+/* Playlist */
 
 let allItems=[];
 const playlist=document.getElementById("playlist");
@@ -322,18 +368,14 @@ let url= type==="videos"
 fetch(url).then(r=>r.text()).then(data=>{
 
 allItems=[];
-playlist.innerHTML="";
-
 data.split("\n").forEach(line=>{
 
 if(line.includes("http")){
-
 const parts=line.split(":");
-const title=parts[0];
-const videoUrl=parts.slice(1).join(":").trim();
-
-allItems.push({title,videoUrl});
-
+allItems.push({
+title:parts[0],
+url:parts.slice(1).join(":").trim()
+});
 }
 
 });
@@ -354,7 +396,7 @@ const div=document.createElement("div");
 div.className="item";
 div.textContent=item.title;
 
-div.onclick=()=>play(proxy(item.videoUrl));
+div.onclick=()=>play(proxy(item.url));
 
 playlist.appendChild(div);
 
@@ -365,30 +407,7 @@ playlist.appendChild(div);
 function searchVideo(){
 
 const q=document.getElementById("search").value.toLowerCase();
-
 render(allItems.filter(i=>i.title.toLowerCase().includes(q)));
-
-}
-
-/* play */
-
-function play(url){
-
-if(currentHls) currentHls.destroy();
-
-if(Hls.isSupported()){
-
-currentHls=new Hls();
-currentHls.loadSource(url);
-currentHls.attachMedia(video);
-
-}else{
-
-video.src=url;
-
-}
-
-video.play();
 
 }
 
