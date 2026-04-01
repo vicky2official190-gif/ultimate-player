@@ -36,13 +36,12 @@ height:100%;
 object-fit:contain;
 }
 
-/* video title */
+/* title */
 
 .video-title{
 padding:10px;
 background:#111;
 font-size:14px;
-font-weight:500;
 }
 
 /* controls */
@@ -127,11 +126,9 @@ border-bottom:1px solid #333;
 cursor:pointer;
 }
 
-/* pdf viewer */
-
 .pdf-viewer{
 width:100%;
-height:80vh;
+height:85vh;
 border:none;
 display:none;
 background:white;
@@ -228,6 +225,17 @@ let playbackSpeed=1;
 let hideTimer;
 let currentType="videos";
 let allItems=[];
+let currentVideoUrl="";
+
+/* resume */
+
+video.addEventListener("timeupdate",()=>{
+
+if(currentVideoUrl){
+localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
+}
+
+});
 
 /* auto hide */
 
@@ -352,6 +360,8 @@ quality.appendChild(option);
 
 function play(url,title){
 
+currentVideoUrl=url;
+
 pdfViewer.style.display="none";
 video.style.display="block";
 
@@ -370,6 +380,10 @@ currentHls.on(Hls.Events.MANIFEST_PARSED,()=>{
 
 setupQuality();
 video.playbackRate=playbackSpeed;
+
+let saved=localStorage.getItem("progress_"+url);
+if(saved) video.currentTime=saved;
+
 video.play();
 
 });
@@ -377,6 +391,14 @@ video.play();
 }else{
 
 video.src=url;
+
+video.onloadedmetadata=()=>{
+
+let saved=localStorage.getItem("progress_"+url);
+if(saved) video.currentTime=saved;
+
+};
+
 video.play();
 
 }
@@ -395,6 +417,12 @@ pdfViewer.style.display="block";
 videoTitle.innerText=title;
 
 pdfViewer.src=url;
+
+setTimeout(()=>{
+if(pdfViewer.contentDocument === null){
+pdfViewer.src="https://docs.google.com/gview?embedded=1&url="+encodeURIComponent(url);
+}
+},1000);
 
 }
 
