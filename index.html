@@ -15,8 +15,6 @@ color:white;
 font-family:Arial;
 }
 
-/* Layout */
-
 .container{
 display:flex;
 height:100vh;
@@ -57,8 +55,6 @@ cursor:pointer;
 background:#333;
 }
 
-/* Player */
-
 .main{
 flex:1;
 display:flex;
@@ -85,13 +81,13 @@ bottom:20px;
 left:50%;
 transform:translateX(-50%);
 display:flex;
-gap:8px;
+gap:6px;
 padding:8px 10px;
 background:rgba(0,0,0,0.6);
 border-radius:12px;
 z-index:999;
-transition:opacity .3s ease;
 white-space:nowrap;
+transition:opacity .3s ease;
 }
 
 .controls.hide{
@@ -102,7 +98,7 @@ pointer-events:none;
 .controls button,
 .controls select{
 padding:6px 8px;
-font-size:13px;
+font-size:12px;
 background:#111;
 color:white;
 border:1px solid #333;
@@ -119,13 +115,13 @@ height:auto;
 
 .sidebar{
 width:100%;
-height:40vh;
+height:45vh;
 order:2;
 }
 
 .main{
 order:1;
-height:60vh;
+height:55vh;
 }
 
 #playerContainer{
@@ -182,8 +178,8 @@ style="flex:1"
 <div class="controls" id="controls">
 
 <button onclick="prev()">⏮</button>
-<button onclick="skip(-10)">⏪ 10s</button>
-<button onclick="skip(10)">⏩ 10s</button>
+<button onclick="skip(-10)">⏪10s</button>
+<button onclick="skip(10)">⏩10s</button>
 <button onclick="next()">⏭</button>
 
 <select onchange="speed(this.value)">
@@ -195,7 +191,7 @@ style="flex:1"
 </select>
 
 <select id="quality" onchange="setQuality(this.value)">
-<option value="-1">Auto</option>
+<option value="-1" selected>Auto</option>
 </select>
 
 <button onclick="toggleFull()">⛶</button>
@@ -244,13 +240,32 @@ let url=line.split(" : ")[1].trim()
 
 if(hls) hls.destroy()
 
-hls=new Hls()
+/* Mobile Optimized HLS */
+
+hls = new Hls({
+maxBufferLength: 30,
+maxMaxBufferLength: 60,
+startLevel: 2,
+capLevelToPlayerSize: true,
+lowLatencyMode: true,
+enableWorker: true,
+fragLoadingTimeOut: 20000,
+fragLoadingMaxRetry: 6,
+manifestLoadingTimeOut: 20000,
+manifestLoadingMaxRetry: 6
+})
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
 
 hls.attachMedia(video)
 
 hls.on(Hls.Events.MANIFEST_PARSED, function(){
+
+/* Mobile Start Low Quality */
+
+if(window.innerWidth < 768){
+hls.currentLevel = 1
+}
 
 video.play()
 
@@ -315,8 +330,6 @@ hls.currentLevel=parseInt(level)
 
 }
 
-/* Fullscreen Rotate */
-
 function toggleFull(){
 
 let player=document.getElementById("playerContainer")
@@ -340,8 +353,6 @@ screen.orientation.unlock()
 }
 
 }
-
-/* Search */
 
 function searchVideo(){
 
