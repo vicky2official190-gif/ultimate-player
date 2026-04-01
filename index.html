@@ -110,8 +110,6 @@ color:white;
 border:1px solid #333;
 }
 
-/* Download Button */
-
 .downloadBtn{
 position:absolute;
 top:10px;
@@ -270,7 +268,8 @@ if(hls) hls.destroy()
 hls=new Hls({
 enableWorker:true,
 maxBufferLength:20,
-startLevel:-1
+startLevel:-1,
+capLevelToPlayerSize:true
 })
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
@@ -309,26 +308,67 @@ playlist.appendChild(div)
 function next(){index++;play()}
 function prev(){index--;play()}
 function skip(s){video.currentTime+=s}
-
-function speed(v){
-video.playbackRate=v
-}
+function speed(v){video.playbackRate=v}
 
 function setQuality(level){
 if(hls) hls.currentLevel=parseInt(level)
 }
+
+/* FULLSCREEN + ROTATE */
 
 function toggleFull(){
 
 let elem=document.getElementById("playerContainer")
 
 if(!document.fullscreenElement){
+
+if(elem.requestFullscreen){
 elem.requestFullscreen()
+}else if(elem.webkitRequestFullscreen){
+elem.webkitRequestFullscreen()
+}
+
+setTimeout(()=>{
+
+if(screen.orientation && screen.orientation.lock){
+screen.orientation.lock("landscape").catch(()=>{})
+}
+
+},500)
+
 }else{
+
+if(document.exitFullscreen){
 document.exitFullscreen()
+}else if(document.webkitExitFullscreen){
+document.webkitExitFullscreen()
+}
+
+if(screen.orientation && screen.orientation.unlock){
+screen.orientation.unlock()
 }
 
 }
+
+}
+
+document.addEventListener("fullscreenchange", () => {
+
+if(document.fullscreenElement){
+
+if(screen.orientation && screen.orientation.lock){
+screen.orientation.lock("landscape").catch(()=>{})
+}
+
+}else{
+
+if(screen.orientation && screen.orientation.unlock){
+screen.orientation.unlock()
+}
+
+}
+
+})
 
 function searchVideo(){
 
