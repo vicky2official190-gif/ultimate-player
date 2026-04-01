@@ -182,6 +182,7 @@ height:calc(100vh - 220px);
 let list=[]
 let index=0
 let hls
+let preloadHls
 
 const video=document.getElementById("video")
 
@@ -210,22 +211,32 @@ let url=line.split(" : ")[1].trim()
 
 if(hls) hls.destroy()
 
-/* Better performance */
+/* Ultra Smooth HLS */
 
 hls=new Hls({
+
 enableWorker:true,
 lowLatencyMode:false,
-backBufferLength:60,
-maxBufferLength:30,
-maxMaxBufferLength:60,
+
+backBufferLength:90,
+
+maxBufferLength:20,
+maxMaxBufferLength:40,
+maxBufferSize:60*1000*1000,
+
 startLevel:-1,
-capLevelToPlayerSize:true
+capLevelToPlayerSize:true,
+
+abrEwmaFastLive:3,
+abrEwmaSlowLive:9,
+
+fragLoadingTimeOut:20000,
+fragLoadingMaxRetry:6
+
 })
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
 hls.attachMedia(video)
-
-/* No autoplay */
 
 video.pause()
 
@@ -242,6 +253,24 @@ q.innerHTML+=`<option value="${i}">${l.height}p</option>`
 })
 
 highlight()
+
+preloadNext()
+
+}
+
+function preloadNext(){
+
+let nextIndex=index+1
+
+if(!list[nextIndex]) return
+
+let url=list[nextIndex].split(" : ")[1]
+
+if(preloadHls) preloadHls.destroy()
+
+preloadHls=new Hls()
+
+preloadHls.loadSource("/api/proxy?url="+encodeURIComponent(url))
 
 }
 
@@ -271,16 +300,33 @@ playlist.appendChild(div)
 
 }
 
-function next(){index++;play()}
-function prev(){index--;play()}
+function next(){
+index++
+play()
+}
+
+function prev(){
+index--
+play()
+}
 
 function skip(s){
 video.currentTime+=s
 }
 
+/* Smooth speed */
+
 function speed(v){
+
+video.playbackRate=1
+
+setTimeout(()=>{
 video.playbackRate=v
+},200)
+
 }
+
+/* Quality */
 
 function setQuality(level){
 if(hls) hls.currentLevel=parseInt(level)
