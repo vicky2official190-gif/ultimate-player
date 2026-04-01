@@ -13,6 +13,7 @@ margin:0;
 background:black;
 color:white;
 font-family:Arial;
+overflow:hidden;
 }
 
 .container{
@@ -20,8 +21,10 @@ display:flex;
 height:100vh;
 }
 
+/* Sidebar */
+
 .sidebar{
-width:300px;
+width:320px;
 background:#111;
 display:flex;
 flex-direction:column;
@@ -45,6 +48,8 @@ flex:1;
 overflow:auto;
 }
 
+/* Items */
+
 .item{
 padding:12px;
 border-bottom:1px solid #222;
@@ -54,6 +59,8 @@ cursor:pointer;
 .active{
 background:#333;
 }
+
+/* Player */
 
 .main{
 flex:1;
@@ -77,7 +84,7 @@ object-fit:contain;
 
 .controls{
 position:absolute;
-bottom:20px;
+bottom:15px;
 left:50%;
 transform:translateX(-50%);
 display:flex;
@@ -104,33 +111,35 @@ color:white;
 border:1px solid #333;
 }
 
-/* Mobile */
+/* Mobile Layout Fix */
 
 @media(max-width:768px){
+
+body{
+overflow:auto;
+}
 
 .container{
 flex-direction:column;
 height:auto;
 }
 
-.sidebar{
-width:100%;
-height:45vh;
-order:2;
-}
-
 .main{
-order:1;
-height:55vh;
+height:auto;
 }
 
 #playerContainer{
-height:40vh;
+height:220px;
 }
 
-.controls{
-max-width:95%;
-overflow-x:auto;
+.sidebar{
+width:100%;
+height:auto;
+}
+
+#playlist{
+height:auto;
+overflow:visible;
 }
 
 }
@@ -142,6 +151,39 @@ overflow-x:auto;
 <body>
 
 <div class="container">
+
+<div class="main">
+
+<div id="playerContainer">
+
+<video id="video" playsinline controls></video>
+
+<div class="controls" id="controls">
+
+<button onclick="prev()">⏮</button>
+<button onclick="skip(-10)">⏪10s</button>
+<button onclick="skip(10)">⏩10s</button>
+<button onclick="next()">⏭</button>
+
+<select onchange="speed(this.value)">
+<option value="1">1x</option>
+<option value="1.25">1.25x</option>
+<option value="1.5">1.5x</option>
+<option value="1.75">1.75x</option>
+<option value="2">2x</option>
+</select>
+
+<select id="quality" onchange="setQuality(this.value)">
+<option value="-1">Auto</option>
+</select>
+
+<button onclick="toggleFull()">⛶</button>
+
+</div>
+
+</div>
+
+</div>
 
 <div class="sidebar">
 
@@ -166,39 +208,6 @@ style="flex:1"
 </div>
 
 <div id="playlist"></div>
-
-</div>
-
-<div class="main">
-
-<div id="playerContainer">
-
-<video id="video" playsinline controls></video>
-
-<div class="controls" id="controls">
-
-<button onclick="prev()">⏮</button>
-<button onclick="skip(-10)">⏪10s</button>
-<button onclick="skip(10)">⏩10s</button>
-<button onclick="next()">⏭</button>
-
-<select onchange="speed(this.value)">
-<option value="1">1x</option>
-<option value="1.25">1.25x</option>
-<option value="1.5">1.5x</option>
-<option value="1.75">1.75x</option>
-<option value="2">2x</option>
-</select>
-
-<select id="quality" onchange="setQuality(this.value)">
-<option value="-1" selected>Auto</option>
-</select>
-
-<button onclick="toggleFull()">⛶</button>
-
-</div>
-
-</div>
 
 </div>
 
@@ -240,19 +249,11 @@ let url=line.split(" : ")[1].trim()
 
 if(hls) hls.destroy()
 
-/* Mobile Optimized HLS */
-
 hls = new Hls({
-maxBufferLength: 30,
-maxMaxBufferLength: 60,
-startLevel: 2,
-capLevelToPlayerSize: true,
-lowLatencyMode: true,
-enableWorker: true,
-fragLoadingTimeOut: 20000,
-fragLoadingMaxRetry: 6,
-manifestLoadingTimeOut: 20000,
-manifestLoadingMaxRetry: 6
+maxBufferLength:30,
+startLevel:2,
+capLevelToPlayerSize:true,
+lowLatencyMode:true
 })
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
@@ -261,10 +262,8 @@ hls.attachMedia(video)
 
 hls.on(Hls.Events.MANIFEST_PARSED, function(){
 
-/* Mobile Start Low Quality */
-
 if(window.innerWidth < 768){
-hls.currentLevel = 1
+hls.currentLevel=1
 }
 
 video.play()
@@ -323,11 +322,7 @@ function skip(s){video.currentTime+=s}
 function speed(v){video.playbackRate=v}
 
 function setQuality(level){
-
-if(hls){
-hls.currentLevel=parseInt(level)
-}
-
+if(hls) hls.currentLevel=parseInt(level)
 }
 
 function toggleFull(){
@@ -335,21 +330,9 @@ function toggleFull(){
 let player=document.getElementById("playerContainer")
 
 if(!document.fullscreenElement){
-
 player.requestFullscreen()
-
-if(screen.orientation && screen.orientation.lock){
-screen.orientation.lock("landscape")
-}
-
 }else{
-
 document.exitFullscreen()
-
-if(screen.orientation){
-screen.orientation.unlock()
-}
-
 }
 
 }
@@ -366,10 +349,10 @@ x.textContent.toLowerCase().includes(val)
 
 }
 
-/* Auto hide controls */
+/* Auto hide */
 
-const controls = document.getElementById("controls")
-const player = document.getElementById("playerContainer")
+const controls=document.getElementById("controls")
+const player=document.getElementById("playerContainer")
 
 let hideTimer
 
@@ -379,7 +362,7 @@ controls.classList.remove("hide")
 
 clearTimeout(hideTimer)
 
-hideTimer = setTimeout(()=>{
+hideTimer=setTimeout(()=>{
 controls.classList.add("hide")
 },3000)
 
@@ -387,8 +370,6 @@ controls.classList.add("hide")
 
 player.addEventListener("mousemove",showControls)
 player.addEventListener("touchstart",showControls)
-video.addEventListener("play",showControls)
-video.addEventListener("pause",()=>controls.classList.remove("hide"))
 
 </script>
 
