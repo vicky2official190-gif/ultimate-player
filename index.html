@@ -12,11 +12,20 @@
 body{
 margin:0;
 background:#000;
-font-family:Arial;
 color:white;
+font-family:Arial;
 }
 
-/* VIDEO */
+/* sticky */
+
+.sticky-player{
+position:sticky;
+top:0;
+z-index:999;
+background:#000;
+}
+
+/* video */
 
 .video-container{
 position:relative;
@@ -31,29 +40,24 @@ height:100%;
 object-fit:contain;
 }
 
-/* CONTROLS */
+/* controls */
 
 .controls{
 position:absolute;
 bottom:0;
 width:100%;
-background:linear-gradient(transparent,rgba(0,0,0,.9));
-padding:8px;
-transition:.3s;
+background:linear-gradient(transparent,rgba(0,0,0,0.9));
+padding:10px;
 }
 
-.controls.hide{
-opacity:0;
-}
-
-/* PROGRESS */
+/* progress */
 
 .progress-container{
 width:100%;
 height:4px;
 background:#444;
+margin-bottom:10px;
 cursor:pointer;
-margin-bottom:8px;
 }
 
 .progress{
@@ -62,43 +66,27 @@ width:0%;
 background:red;
 }
 
-/* ROW */
+/* bottom controls */
 
-.controls-row{
+.bottom-controls{
 display:flex;
-justify-content:space-between;
-align-items:center;
-}
-
-/* LEFT RIGHT */
-
-.left-controls,
-.right-controls{
-display:flex;
+justify-content:center;
 align-items:center;
 gap:10px;
+flex-wrap:wrap;
 }
 
-button{
-background:none;
-border:none;
+.bottom-controls button,
+.bottom-controls select{
+background:#111;
+border:1px solid #333;
 color:white;
-font-size:18px;
+padding:6px 10px;
+border-radius:4px;
 cursor:pointer;
 }
 
-.volume{
-width:80px;
-}
-
-select{
-background:#111;
-color:white;
-border:1px solid #444;
-padding:3px;
-}
-
-/* HEADER */
+/* header */
 
 .header{
 display:flex;
@@ -125,7 +113,7 @@ color:white;
 padding:5px;
 }
 
-/* PLAYLIST */
+/* playlist */
 
 .item{
 padding:12px;
@@ -133,7 +121,7 @@ border-bottom:1px solid #333;
 cursor:pointer;
 }
 
-/* MOBILE */
+/* mobile */
 
 @media(max-width:768px){
 
@@ -141,17 +129,13 @@ cursor:pointer;
 height:30vh;
 }
 
-button{
-font-size:22px;
-}
-
-.volume{
-width:60px;
+.bottom-controls{
+gap:5px;
 }
 
 }
 
-/* FULLSCREEN */
+/* fullscreen */
 
 .video-container:fullscreen{
 height:100vh;
@@ -167,41 +151,31 @@ height:100vh;
 
 <body>
 
+<div class="sticky-player">
+
 <div class="video-container" id="videoContainer">
 
 <video id="video" playsinline></video>
 
-<div class="controls" id="controls">
+<div class="controls">
 
 <div class="progress-container" id="progressContainer">
 <div class="progress" id="progress"></div>
 </div>
 
-<div class="controls-row">
+<div class="bottom-controls">
 
-<div class="left-controls">
-
-<button onclick="togglePlay()">⏯</button>
-<button onclick="rewind()">⏪</button>
-<button onclick="forward()">⏩</button>
-
-<span id="time">00:00 / 00:00</span>
-
-</div>
-
-<div class="right-controls">
-
-<input type="range" min="0" max="1" step="0.01"
-oninput="video.volume=this.value" class="volume">
+<button onclick="rewind()">⏪ 10s</button>
+<button onclick="forward()">⏩ 10s</button>
 
 <select onchange="changeSpeed(this.value)">
-<option>0.5</option>
-<option>0.75</option>
-<option selected>1</option>
-<option>1.25</option>
-<option>1.5</option>
-<option>1.75</option>
-<option>2</option>
+<option>0.5x</option>
+<option>0.75x</option>
+<option selected>1x</option>
+<option>1.25x</option>
+<option>1.5x</option>
+<option>1.75x</option>
+<option>2x</option>
 </select>
 
 <select class="quality" onchange="changeQuality(this.value)">
@@ -209,8 +183,6 @@ oninput="video.volume=this.value" class="volume">
 </select>
 
 <button onclick="toggleFullscreen()">⛶</button>
-
-</div>
 
 </div>
 
@@ -229,6 +201,8 @@ oninput="video.volume=this.value" class="volume">
 
 </div>
 
+</div>
+
 <div id="playlist"></div>
 
 <script>
@@ -236,36 +210,17 @@ oninput="video.volume=this.value" class="volume">
 const video=document.getElementById("video");
 const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
-const controls=document.getElementById("controls");
-const time=document.getElementById("time");
 
 let currentHls;
-let hideTimer;
 
-/* PLAY */
-
-function togglePlay(){
-video.paused ? video.play() : video.pause();
-}
-
-/* SKIP */
-
-function rewind(){ video.currentTime-=10 }
-function forward(){ video.currentTime+=10 }
-
-/* PROGRESS */
+/* progress */
 
 video.addEventListener("timeupdate",()=>{
 
 const percent=(video.currentTime/video.duration)*100;
 progress.style.width=percent+"%";
 
-time.innerText=
-format(video.currentTime)+" / "+format(video.duration);
-
 });
-
-/* SEEK */
 
 progressContainer.addEventListener("click",(e)=>{
 
@@ -274,20 +229,18 @@ video.currentTime=(e.offsetX/width)*video.duration;
 
 });
 
-/* FORMAT */
+/* skip */
 
-function format(t){
+function rewind(){ video.currentTime-=10 }
+function forward(){ video.currentTime+=10 }
 
-if(!t) return "00:00";
+/* speed */
 
-let m=Math.floor(t/60);
-let s=Math.floor(t%60);
-
-return `${m}:${s<10?"0":""}${s}`;
-
+function changeSpeed(speed){
+video.playbackRate=speed;
 }
 
-/* FULLSCREEN + ROTATE */
+/* fullscreen + rotate */
 
 function toggleFullscreen(){
 
@@ -313,51 +266,7 @@ screen.orientation.unlock();
 
 }
 
-/* SPEED */
-
-function changeSpeed(s){
-video.playbackRate=s;
-}
-
-/* AUTO HIDE */
-
-function showControls(){
-
-controls.classList.remove("hide");
-
-clearTimeout(hideTimer);
-
-hideTimer=setTimeout(()=>{
-controls.classList.add("hide");
-},3000);
-
-}
-
-document.getElementById("videoContainer")
-.addEventListener("mousemove",showControls);
-
-document.getElementById("videoContainer")
-.addEventListener("touchstart",showControls);
-
-/* KEYBOARD */
-
-document.addEventListener("keydown",(e)=>{
-
-if(e.code==="Space"){
-e.preventDefault();
-togglePlay();
-}
-
-if(e.key==="ArrowRight") forward();
-if(e.key==="ArrowLeft") rewind();
-
-});
-
-/* DOUBLE CLICK */
-
-video.addEventListener("dblclick",togglePlay);
-
-/* QUALITY */
+/* quality */
 
 function changeQuality(level){
 
@@ -386,7 +295,7 @@ quality.appendChild(option);
 
 }
 
-/* HLS PLAY */
+/* play */
 
 function play(url){
 
@@ -415,7 +324,7 @@ video.play();
 
 }
 
-/* PLAYLIST */
+/* playlist */
 
 let allItems=[];
 const playlist=document.getElementById("playlist");
@@ -483,6 +392,26 @@ render(allItems.filter(i=>i.title.toLowerCase().includes(q)));
 }
 
 loadList("videos");
+
+/* keyboard */
+
+document.addEventListener("keydown",(e)=>{
+
+if(e.code==="Space"){
+e.preventDefault();
+video.paused?video.play():video.pause();
+}
+
+if(e.key==="ArrowRight") forward();
+if(e.key==="ArrowLeft") rewind();
+
+});
+
+/* double click */
+
+video.addEventListener("dblclick",()=>{
+video.paused?video.play():video.pause();
+});
 
 </script>
 
