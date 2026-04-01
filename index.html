@@ -85,6 +85,12 @@ padding:8px 10px;
 background:rgba(0,0,0,0.6);
 border-radius:12px;
 white-space:nowrap;
+transition:opacity .3s ease;
+}
+
+.controls.hide{
+opacity:0;
+pointer-events:none;
 }
 
 .controls button,
@@ -129,7 +135,7 @@ height:calc(100vh - 220px);
 
 <video id="video" controls playsinline></video>
 
-<div class="controls">
+<div class="controls" id="controls">
 
 <button onclick="prev()">⏮</button>
 <button onclick="skip(-10)">⏪</button>
@@ -182,9 +188,11 @@ height:calc(100vh - 220px);
 let list=[]
 let index=0
 let hls
-let preloadHls
+let hideTimer
 
 const video=document.getElementById("video")
+const controls=document.getElementById("controls")
+const player=document.getElementById("playerContainer")
 
 loadTxt("videos.txt")
 
@@ -193,10 +201,8 @@ function loadTxt(file){
 fetch(file)
 .then(r=>r.text())
 .then(data=>{
-
 list=data.split("\n").filter(x=>x.trim())
 load()
-
 })
 
 }
@@ -204,35 +210,19 @@ load()
 function play(){
 
 let line=list[index]
-
 if(!line.includes(" : ")) return
 
 let url=line.split(" : ")[1].trim()
 
 if(hls) hls.destroy()
 
-/* Ultra Smooth HLS */
-
 hls=new Hls({
-
 enableWorker:true,
-lowLatencyMode:false,
-
-backBufferLength:90,
-
 maxBufferLength:20,
 maxMaxBufferLength:40,
-maxBufferSize:60*1000*1000,
-
+backBufferLength:60,
 startLevel:-1,
-capLevelToPlayerSize:true,
-
-abrEwmaFastLive:3,
-abrEwmaSlowLive:9,
-
-fragLoadingTimeOut:20000,
-fragLoadingMaxRetry:6
-
+capLevelToPlayerSize:true
 })
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
@@ -240,37 +230,7 @@ hls.attachMedia(video)
 
 video.pause()
 
-hls.on(Hls.Events.MANIFEST_PARSED,function(){
-
-let q=document.getElementById("quality")
-
-q.innerHTML='<option value="-1">Auto</option>'
-
-hls.levels.forEach((l,i)=>{
-q.innerHTML+=`<option value="${i}">${l.height}p</option>`
-})
-
-})
-
 highlight()
-
-preloadNext()
-
-}
-
-function preloadNext(){
-
-let nextIndex=index+1
-
-if(!list[nextIndex]) return
-
-let url=list[nextIndex].split(" : ")[1]
-
-if(preloadHls) preloadHls.destroy()
-
-preloadHls=new Hls()
-
-preloadHls.loadSource("/api/proxy?url="+encodeURIComponent(url))
 
 }
 
@@ -300,33 +260,13 @@ playlist.appendChild(div)
 
 }
 
-function next(){
-index++
-play()
-}
-
-function prev(){
-index--
-play()
-}
-
-function skip(s){
-video.currentTime+=s
-}
-
-/* Smooth speed */
+function next(){index++;play()}
+function prev(){index--;play()}
+function skip(s){video.currentTime+=s}
 
 function speed(v){
-
-video.playbackRate=1
-
-setTimeout(()=>{
 video.playbackRate=v
-},200)
-
 }
-
-/* Quality */
 
 function setQuality(level){
 if(hls) hls.currentLevel=parseInt(level)
@@ -334,12 +274,28 @@ if(hls) hls.currentLevel=parseInt(level)
 
 function toggleFull(){
 
-let player=document.getElementById("playerContainer")
+let elem=document.getElementById("playerContainer")
 
 if(!document.fullscreenElement){
-player.requestFullscreen()
+
+if(elem.requestFullscreen){
+elem.requestFullscreen()
+}
+
+if(screen.orientation && screen.orientation.lock){
+screen.orientation.lock('landscape').catch(()=>{})
+}
+
 }else{
+
+if(document.exitFullscreen){
 document.exitFullscreen()
+}
+
+if(screen.orientation && screen.orientation.unlock){
+screen.orientation.unlock()
+}
+
 }
 
 }
@@ -365,6 +321,25 @@ document.querySelectorAll(".item")[index]
 ?.classList.add("active")
 
 }
+
+/* Controls auto hide */
+
+function showControls(){
+
+controls.classList.remove("hide")
+
+clearTimeout(hideTimer)
+
+hideTimer=setTimeout(()=>{
+controls.classList.add("hide")
+},3000)
+
+}
+
+player.addEventListener("mousemove",showControls)
+player.addEventListener("touchstart",showControls)
+video.addEventListener("play",showControls)
+video.addEventListener("pause",()=>controls.classList.remove("hide"))
 
 </script>
 
