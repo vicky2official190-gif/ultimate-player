@@ -26,26 +26,55 @@ height:50vh;
 background:black;
 }
 
-.controls-center{
+/* Controls Bottom Center */
+
+.controls{
 position:absolute;
-top:50%;
+bottom:20px;
 left:50%;
-transform:translate(-50%,-50%);
+transform:translateX(-50%);
 display:flex;
 gap:10px;
-background:rgba(0,0,0,0.6);
-padding:10px;
-border-radius:8px;
-z-index:10;
+background:rgba(0,0,0,0.7);
+padding:8px 12px;
+border-radius:10px;
+transition:opacity .3s;
 }
 
-.controls-center button,
-.controls-center select{
+.controls.hide{
+opacity:0;
+pointer-events:none;
+}
+
+.controls button,
+.controls select{
 background:#111;
 color:white;
 border:1px solid #444;
 padding:6px 10px;
 cursor:pointer;
+border-radius:5px;
+}
+
+/* Responsive */
+
+@media(max-width:768px){
+
+video{
+height:40vh;
+}
+
+.controls{
+bottom:10px;
+gap:5px;
+}
+
+.controls button,
+.controls select{
+padding:5px 7px;
+font-size:12px;
+}
+
 }
 
 .header{
@@ -60,10 +89,6 @@ padding:8px 12px;
 background:#222;
 border-radius:5px;
 cursor:pointer;
-}
-
-.btn:hover{
-background:#444;
 }
 
 #playlist{
@@ -86,11 +111,12 @@ background:#222;
 
 <body>
 
-<div class="video-container">
+<div class="video-container" id="videoContainer">
 
-<video id="video" controls></video>
+<video id="video"></video>
 
-<div class="controls-center">
+<div class="controls" id="controls">
+
 <button onclick="rewind()">⏪ 10s</button>
 <button onclick="forward()">⏩ 10s</button>
 
@@ -123,8 +149,11 @@ background:#222;
 
 const video = document.getElementById('video');
 const playlist = document.getElementById('playlist');
+const controls = document.getElementById('controls');
+const videoContainer = document.getElementById('videoContainer');
 
 let currentHls;
+let hideTimeout;
 
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url=" + encodeURIComponent(url);
@@ -188,8 +217,10 @@ if(Hls.isSupported()){
 currentHls=new Hls();
 currentHls.loadSource(url);
 currentHls.attachMedia(video);
+video.play();
 }else{
 video.src=url;
+video.play();
 }
 
 }
@@ -209,13 +240,30 @@ video.playbackRate = speed;
 function changeQuality(q){
 if(currentHls){
 const levels = currentHls.levels;
-levels.forEach((level, index)=>{
+levels.forEach((level,index)=>{
 if(level.height == q){
 currentHls.currentLevel = index;
 }
 });
 }
 }
+
+/* Auto hide controls */
+
+function showControls(){
+controls.classList.remove("hide");
+
+clearTimeout(hideTimeout);
+
+hideTimeout=setTimeout(()=>{
+controls.classList.add("hide");
+},3000);
+}
+
+videoContainer.addEventListener("mousemove",showControls);
+videoContainer.addEventListener("touchstart",showControls);
+
+showControls();
 
 loadList("videos");
 
