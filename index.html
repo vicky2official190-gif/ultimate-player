@@ -17,7 +17,7 @@ margin:0;
 overflow-x:hidden;
 }
 
-/* Sticky Player */
+/* sticky player */
 
 .sticky{
 position:sticky;
@@ -26,9 +26,10 @@ z-index:999;
 background:#000;
 }
 
-/* Video */
+/* video */
 
 .video-container{
+position:relative;
 background:black;
 width:100%;
 height:50vh;
@@ -41,7 +42,26 @@ object-fit:contain;
 background:black;
 }
 
-/* Controls */
+/* double tap */
+
+.double-left,
+.double-right{
+position:absolute;
+top:0;
+width:50%;
+height:100%;
+z-index:5;
+}
+
+.double-left{
+left:0;
+}
+
+.double-right{
+right:0;
+}
+
+/* controls */
 
 .controls{
 display:flex;
@@ -61,7 +81,7 @@ cursor:pointer;
 border-radius:6px;
 }
 
-/* Header */
+/* header */
 
 .header{
 display:flex;
@@ -79,7 +99,7 @@ border-radius:5px;
 cursor:pointer;
 }
 
-/* Search */
+/* search */
 
 .search{
 margin-left:auto;
@@ -94,7 +114,7 @@ border-radius:6px;
 width:200px;
 }
 
-/* Playlist */
+/* playlist */
 
 #playlist{
 padding:10px;
@@ -110,7 +130,7 @@ cursor:pointer;
 background:#222;
 }
 
-/* Mobile */
+/* mobile */
 
 @media(max-width:768px){
 
@@ -137,7 +157,12 @@ flex-wrap:wrap;
 <div class="sticky">
 
 <div class="video-container" id="videoContainer">
+
 <video id="video" controls playsinline webkit-playsinline></video>
+
+<div class="double-left"></div>
+<div class="double-right"></div>
+
 </div>
 
 <div class="controls">
@@ -322,6 +347,46 @@ document.exitFullscreen();
 }
 
 }
+
+/* double tap */
+
+let lastTap=0;
+
+document.querySelector(".double-left").addEventListener("dblclick",rewind);
+document.querySelector(".double-right").addEventListener("dblclick",forward);
+
+document.querySelector(".double-left").addEventListener("touchend",doubleLeft);
+document.querySelector(".double-right").addEventListener("touchend",doubleRight);
+
+function doubleLeft(){
+const now=Date.now();
+if(now-lastTap<300){
+rewind();
+}
+lastTap=now;
+}
+
+function doubleRight(){
+const now=Date.now();
+if(now-lastTap<300){
+forward();
+}
+lastTap=now;
+}
+
+/* keyboard */
+
+document.addEventListener("keydown",function(e){
+
+if(e.key==="ArrowRight"){
+forward();
+}
+
+if(e.key==="ArrowLeft"){
+rewind();
+}
+
+});
 
 loadList("videos");
 
