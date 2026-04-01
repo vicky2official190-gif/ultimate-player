@@ -229,6 +229,12 @@ let currentType="videos";
 let allItems=[];
 let currentVideoUrl="";
 
+/* proxy */
+
+function proxy(url){
+return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
+}
+
 /* resume */
 
 video.addEventListener("timeupdate",()=>{
@@ -418,15 +424,11 @@ pdfViewer.style.display="block";
 
 videoTitle.innerText=title;
 
-pdfViewer.src=
-"https://mozilla.github.io/pdf.js/web/viewer.html?file="+encodeURIComponent(url);
+const proxyUrl = proxy(url);
 
-}
+pdfViewer.src =
+"https://mozilla.github.io/pdf.js/web/viewer.html?file="+encodeURIComponent(proxyUrl);
 
-/* proxy */
-
-function proxy(url){
-return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
 
 /* load */
