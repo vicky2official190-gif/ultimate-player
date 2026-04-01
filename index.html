@@ -74,6 +74,10 @@ background:#222;
 const video = document.getElementById('video');
 const playlist = document.getElementById('playlist');
 
+function proxy(url){
+return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url=" + encodeURIComponent(url);
+}
+
 function loadList(type){
 
 playlist.innerHTML="Loading...";
@@ -109,7 +113,7 @@ div.className="item";
 div.textContent=title;
 
 div.onclick=()=>{
-playVideo(videoUrl);
+playVideo(proxy(videoUrl));
 };
 
 playlist.appendChild(div);
