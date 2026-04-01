@@ -21,8 +21,6 @@ display:flex;
 height:100vh;
 }
 
-/* Sidebar */
-
 .sidebar{
 width:320px;
 background:#111;
@@ -48,23 +46,15 @@ flex:1;
 overflow:auto;
 }
 
-/* Items */
-
 .item{
 padding:12px;
 border-bottom:1px solid #222;
 cursor:pointer;
 }
 
-.item:hover{
-background:#222;
-}
-
 .active{
 background:#333;
 }
-
-/* Player */
 
 .main{
 flex:1;
@@ -115,13 +105,9 @@ color:white;
 border:1px solid #333;
 }
 
-/* Mobile Fix */
+/* Mobile */
 
 @media(max-width:768px){
-
-body{
-overflow:hidden;
-}
 
 .container{
 flex-direction:column;
@@ -141,14 +127,6 @@ height:220px;
 height:calc(100vh - 220px);
 display:flex;
 flex-direction:column;
-}
-
-.logo{
-flex:none;
-}
-
-.topbar{
-flex:none;
 }
 
 #playlist{
@@ -263,19 +241,35 @@ let url=line.split(" : ")[1].trim()
 
 if(hls) hls.destroy()
 
+/* Performance Optimized HLS */
+
 hls = new Hls({
-maxBufferLength:30,
-startLevel:2,
-capLevelToPlayerSize:true,
+enableWorker:true,
 lowLatencyMode:true,
-enableWorker:true
+backBufferLength:90,
+
+maxBufferLength:10,
+maxMaxBufferLength:20,
+maxBufferSize:60*1000*1000,
+
+capLevelToPlayerSize:true,
+startLevel:-1,
+
+abrEwmaFastLive:2,
+abrEwmaSlowLive:5,
+
+fragLoadingTimeOut:20000,
+fragLoadingMaxRetry:6,
+
+manifestLoadingTimeOut:20000,
+manifestLoadingMaxRetry:6
 })
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
 
 hls.attachMedia(video)
 
-hls.on(Hls.Events.MANIFEST_PARSED, function(){
+hls.on(Hls.Events.MANIFEST_PARSED,function(){
 
 if(window.innerWidth < 768){
 hls.currentLevel=1
@@ -334,7 +328,24 @@ document.querySelectorAll(".item")[index]
 function next(){index++;play()}
 function prev(){index--;play()}
 function skip(s){video.currentTime+=s}
-function speed(v){video.playbackRate=v}
+
+function speed(v){
+
+video.playbackRate=1
+
+setTimeout(()=>{
+video.playbackRate=v
+},200)
+
+if(v>1.25 && hls){
+hls.currentLevel=Math.max(0,hls.currentLevel-1)
+}
+
+if(hls){
+hls.startLoad()
+}
+
+}
 
 function setQuality(level){
 if(hls) hls.currentLevel=parseInt(level)
