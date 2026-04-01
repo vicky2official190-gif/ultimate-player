@@ -14,25 +14,59 @@ background:#000;
 color:white;
 font-family:Arial;
 margin:0;
+overflow-x:hidden;
 }
+
+/* video container */
 
 .video-container{
 position:relative;
 background:black;
+width:100%;
+height:50vh;
 }
+
+/* video */
 
 video{
 width:100%;
-height:50vh;
+height:100%;
+object-fit:contain;
 background:black;
+}
+
+/* fullscreen */
+
+.video-container:fullscreen{
+width:100vw;
+height:100vh;
+}
+
+.video-container:fullscreen video{
+width:100vw;
+height:100vh;
 object-fit:contain;
 }
 
-/* Controls */
+/* mobile landscape fix */
+
+@media (orientation: landscape){
+
+.video-container{
+height:100vh;
+}
+
+video{
+height:100vh;
+}
+
+}
+
+/* controls */
 
 .controls{
 position:absolute;
-bottom:20px;
+bottom:15px;
 left:50%;
 transform:translateX(-50%);
 display:flex;
@@ -41,6 +75,7 @@ background:rgba(0,0,0,0.7);
 padding:8px 12px;
 border-radius:10px;
 transition:opacity .3s;
+z-index:10;
 }
 
 .controls.hide{
@@ -58,6 +93,8 @@ cursor:pointer;
 border-radius:5px;
 }
 
+/* header */
+
 .header{
 display:flex;
 gap:10px;
@@ -71,6 +108,8 @@ background:#222;
 border-radius:5px;
 cursor:pointer;
 }
+
+/* playlist */
 
 #playlist{
 padding:10px;
@@ -94,7 +133,6 @@ background:#222;
 
 <div class="video-container" id="videoContainer">
 
-<!-- FIX: controls enabled -->
 <video id="video" controls playsinline webkit-playsinline></video>
 
 <div class="controls" id="controls">
@@ -250,6 +288,7 @@ currentHls.currentLevel = index;
 function toggleFullscreen(){
 
 if(!document.fullscreenElement){
+
 videoContainer.requestFullscreen();
 
 if(screen.orientation && screen.orientation.lock){
@@ -257,6 +296,7 @@ screen.orientation.lock('landscape').catch(()=>{});
 }
 
 }else{
+
 document.exitFullscreen();
 
 if(screen.orientation && screen.orientation.unlock){
