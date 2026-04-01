@@ -14,10 +14,9 @@ background:#000;
 color:white;
 font-family:Arial;
 margin:0;
-overflow-x:hidden;
 }
 
-/* sticky player */
+/* sticky */
 
 .sticky{
 position:sticky;
@@ -60,16 +59,11 @@ position:absolute;
 top:0;
 width:50%;
 height:100%;
-z-index:2;
+z-index:1;
 }
 
-.double-left{
-left:0;
-}
-
-.double-right{
-right:0;
-}
+.double-left{ left:0 }
+.double-right{ right:0 }
 
 /* controls */
 
@@ -99,7 +93,6 @@ gap:10px;
 padding:10px;
 background:#111;
 align-items:center;
-flex-wrap:wrap;
 }
 
 .btn{
@@ -108,8 +101,6 @@ background:#222;
 border-radius:5px;
 cursor:pointer;
 }
-
-/* search */
 
 .search{
 margin-left:auto;
@@ -121,7 +112,6 @@ border:1px solid #444;
 color:white;
 padding:7px 10px;
 border-radius:6px;
-width:200px;
 }
 
 /* playlist */
@@ -136,10 +126,6 @@ border-bottom:1px solid #333;
 cursor:pointer;
 }
 
-.item:hover{
-background:#222;
-}
-
 /* mobile */
 
 @media(max-width:768px){
@@ -148,25 +134,11 @@ background:#222;
 height:35vh;
 }
 
-.search input{
-width:120px;
 }
-
-.controls{
-flex-wrap:wrap;
-}
-
-}
-
-/* mobile rotate */
 
 @media (orientation: landscape){
 
 .video-container{
-height:100vh;
-}
-
-video{
 height:100vh;
 }
 
@@ -204,13 +176,6 @@ height:100vh;
 <option value="2">2x</option>
 </select>
 
-<select onchange="changeQuality(this.value)">
-<option value="720">720p</option>
-<option value="480">480p</option>
-<option value="360">360p</option>
-<option value="240">240p</option>
-</select>
-
 <button onclick="toggleFullscreen()">⛶</button>
 
 </div>
@@ -220,7 +185,7 @@ height:100vh;
 <div class="btn" onclick="loadList('arithmetic')">Arithmetic</div>
 
 <div class="search">
-<input type="text" id="search" placeholder="Search lecture..." onkeyup="searchVideo()">
+<input type="text" id="search" placeholder="Search..." onkeyup="searchVideo()">
 </div>
 
 </div>
@@ -231,14 +196,14 @@ height:100vh;
 
 <script>
 
-const video = document.getElementById('video');
-const playlist = document.getElementById('playlist');
+const video=document.getElementById('video');
+const playlist=document.getElementById('playlist');
 
 let currentHls;
 let allItems=[];
 
 function proxy(url){
-return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url=" + encodeURIComponent(url);
+return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
 
 function loadList(type){
@@ -246,19 +211,13 @@ function loadList(type){
 playlist.innerHTML="Loading...";
 allItems=[];
 
-let url="";
-
-if(type==="videos"){
-url="https://ultimate-player.vicky2official1-90.workers.dev/videos.txt";
-}
-
-if(type==="arithmetic"){
-url="https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
-}
+let url= type==="videos"
+? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
+: "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
 
 fetch(url)
-.then(res => res.text())
-.then(data => {
+.then(res=>res.text())
+.then(data=>{
 
 playlist.innerHTML="";
 const lines=data.split('\n');
@@ -272,7 +231,6 @@ const title=parts[0];
 const videoUrl=parts.slice(1).join(":").trim();
 
 allItems.push({title,videoUrl});
-
 renderList(allItems);
 
 }
@@ -317,18 +275,14 @@ renderList(filtered);
 
 function playVideo(url){
 
-if(currentHls){
-currentHls.destroy();
-}
+if(currentHls) currentHls.destroy();
 
 if(Hls.isSupported()){
 currentHls=new Hls();
 currentHls.loadSource(url);
 currentHls.attachMedia(video);
 
-currentHls.on(Hls.Events.MANIFEST_PARSED,function(){
-video.play();
-});
+currentHls.on(Hls.Events.MANIFEST_PARSED,()=>video.play());
 
 }else{
 video.src=url;
@@ -337,27 +291,11 @@ video.play();
 
 }
 
-function rewind(){
-video.currentTime -= 10;
-}
-
-function forward(){
-video.currentTime += 10;
-}
+function rewind(){ video.currentTime-=10 }
+function forward(){ video.currentTime+=10 }
 
 function changeSpeed(speed){
-video.playbackRate = speed;
-}
-
-function changeQuality(q){
-if(currentHls){
-const levels = currentHls.levels;
-levels.forEach((level,index)=>{
-if(level.height == q){
-currentHls.currentLevel = index;
-}
-});
-}
+video.playbackRate=speed;
 }
 
 function toggleFullscreen(){
@@ -376,40 +314,23 @@ document.exitFullscreen();
 
 let lastTap=0;
 
-document.querySelector(".double-left").addEventListener("dblclick",rewind);
-document.querySelector(".double-right").addEventListener("dblclick",forward);
-
-document.querySelector(".double-left").addEventListener("touchend",doubleLeft);
-document.querySelector(".double-right").addEventListener("touchend",doubleRight);
-
-function doubleLeft(){
+document.querySelector(".double-left").addEventListener("touchend",()=>{
 const now=Date.now();
-if(now-lastTap<300){
-rewind();
-}
+if(now-lastTap<300) rewind();
 lastTap=now;
-}
+});
 
-function doubleRight(){
+document.querySelector(".double-right").addEventListener("touchend",()=>{
 const now=Date.now();
-if(now-lastTap<300){
-forward();
-}
+if(now-lastTap<300) forward();
 lastTap=now;
-}
+});
 
 /* keyboard */
 
-document.addEventListener("keydown",function(e){
-
-if(e.key==="ArrowRight"){
-forward();
-}
-
-if(e.key==="ArrowLeft"){
-rewind();
-}
-
+document.addEventListener("keydown",e=>{
+if(e.key==="ArrowRight") forward();
+if(e.key==="ArrowLeft") rewind();
 });
 
 loadList("videos");
