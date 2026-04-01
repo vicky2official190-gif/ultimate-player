@@ -16,7 +16,7 @@ color:white;
 font-family:Arial;
 }
 
-/* Sticky */
+/* sticky */
 
 .sticky-player{
 position:sticky;
@@ -25,7 +25,7 @@ z-index:999;
 background:#000;
 }
 
-/* Video */
+/* video */
 
 .video-container{
 position:relative;
@@ -40,7 +40,7 @@ height:100%;
 object-fit:contain;
 }
 
-/* Controls */
+/* controls */
 
 .controls{
 position:absolute;
@@ -48,9 +48,14 @@ bottom:0;
 width:100%;
 background:linear-gradient(transparent,rgba(0,0,0,0.9));
 padding:10px;
+transition:.3s;
 }
 
-/* Progress */
+.controls.hide{
+opacity:0;
+}
+
+/* progress */
 
 .progress-container{
 width:100%;
@@ -65,22 +70,21 @@ width:0%;
 background:red;
 }
 
-/* Time */
+/* time */
 
 .time{
 text-align:center;
 font-size:12px;
-margin-top:5px;
+margin:5px 0;
 }
 
-/* Bottom Controls */
+/* bottom */
 
 .bottom-controls{
 display:flex;
 justify-content:center;
 gap:10px;
 flex-wrap:wrap;
-margin-top:8px;
 }
 
 .bottom-controls button,
@@ -92,7 +96,7 @@ padding:6px 10px;
 cursor:pointer;
 }
 
-/* Header */
+/* header */
 
 .header{
 display:flex;
@@ -118,7 +122,7 @@ color:white;
 padding:5px;
 }
 
-/* Playlist */
+/* playlist */
 
 .item{
 padding:12px;
@@ -126,7 +130,16 @@ border-bottom:1px solid #333;
 cursor:pointer;
 }
 
-/* Mobile */
+/* pdf viewer */
+
+.pdf-viewer{
+width:100%;
+height:80vh;
+border:none;
+display:none;
+}
+
+/* mobile */
 
 @media(max-width:768px){
 
@@ -148,7 +161,7 @@ height:30vh;
 
 <video id="video" playsinline></video>
 
-<div class="controls">
+<div class="controls" id="controls">
 
 <div class="progress-container" id="progressContainer">
 <div class="progress" id="progress"></div>
@@ -198,15 +211,40 @@ height:30vh;
 
 <div id="playlist"></div>
 
+<iframe id="pdfViewer" class="pdf-viewer"></iframe>
+
 <script>
 
 const video=document.getElementById("video");
 const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
 const timeDisplay=document.getElementById("timeDisplay");
+const controls=document.getElementById("controls");
+const pdfViewer=document.getElementById("pdfViewer");
 
 let currentHls;
 let playbackSpeed=1;
+let hideTimer;
+
+/* auto hide controls */
+
+function showControls(){
+
+controls.classList.remove("hide");
+
+clearTimeout(hideTimer);
+
+hideTimer=setTimeout(()=>{
+controls.classList.add("hide");
+},3000);
+
+}
+
+document.getElementById("videoContainer")
+.addEventListener("mousemove",showControls);
+
+document.getElementById("videoContainer")
+.addEventListener("touchstart",showControls);
 
 /* format */
 
@@ -311,6 +349,8 @@ quality.appendChild(option);
 
 function play(url){
 
+pdfViewer.style.display="none";
+
 if(currentHls) currentHls.destroy();
 
 if(Hls.isSupported()){
@@ -334,6 +374,16 @@ video.src=url;
 video.play();
 
 }
+
+}
+
+/* pdf */
+
+function openPDF(url){
+
+video.pause();
+pdfViewer.style.display="block";
+pdfViewer.src=url;
 
 }
 
@@ -371,13 +421,13 @@ url:parts.slice(1).join(":").trim()
 
 });
 
-render(allItems);
+render(allItems,type);
 
 });
 
 }
 
-function render(list){
+function render(list,type){
 
 playlist.innerHTML="";
 
@@ -388,7 +438,11 @@ const div=document.createElement("div");
 div.className="item";
 div.textContent=item.title;
 
+if(type==="arithmetic"){
+div.onclick=()=>openPDF(item.url);
+}else{
 div.onclick=()=>play(proxy(item.url));
+}
 
 playlist.appendChild(div);
 
