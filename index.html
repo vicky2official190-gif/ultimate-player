@@ -32,6 +32,7 @@ flex-direction:column;
 .logo{
 padding:15px;
 background:#000;
+font-weight:bold;
 }
 
 .topbar{
@@ -85,28 +86,26 @@ left:50%;
 transform:translateX(-50%);
 display:flex;
 gap:8px;
-padding:10px;
+padding:8px 10px;
 background:rgba(0,0,0,0.6);
-border-radius:10px;
+border-radius:12px;
 z-index:999;
-flex-wrap:wrap;
+transition:opacity .3s ease;
+white-space:nowrap;
 }
 
-button,select{
+.controls.hide{
+opacity:0;
+pointer-events:none;
+}
+
+.controls button,
+.controls select{
+padding:6px 8px;
+font-size:13px;
 background:#111;
 color:white;
 border:1px solid #333;
-padding:8px 10px;
-}
-
-/* Fullscreen Fix */
-
-#playerContainer:fullscreen .controls{
-display:flex;
-}
-
-#playerContainer:-webkit-full-screen .controls{
-display:flex;
 }
 
 /* Mobile */
@@ -131,6 +130,11 @@ height:60vh;
 
 #playerContainer{
 height:40vh;
+}
+
+.controls{
+max-width:95%;
+overflow-x:auto;
 }
 
 }
@@ -175,7 +179,7 @@ style="flex:1"
 
 <video id="video" playsinline controls></video>
 
-<div class="controls">
+<div class="controls" id="controls">
 
 <button onclick="prev()">⏮</button>
 <button onclick="skip(-10)">⏪ 10s</button>
@@ -311,7 +315,7 @@ hls.currentLevel=parseInt(level)
 
 }
 
-/* Rotate Fullscreen */
+/* Fullscreen Rotate */
 
 function toggleFull(){
 
@@ -337,6 +341,8 @@ screen.orientation.unlock()
 
 }
 
+/* Search */
+
 function searchVideo(){
 
 let val=document.getElementById("search").value.toLowerCase()
@@ -348,6 +354,30 @@ x.textContent.toLowerCase().includes(val)
 })
 
 }
+
+/* Auto hide controls */
+
+const controls = document.getElementById("controls")
+const player = document.getElementById("playerContainer")
+
+let hideTimer
+
+function showControls(){
+
+controls.classList.remove("hide")
+
+clearTimeout(hideTimer)
+
+hideTimer = setTimeout(()=>{
+controls.classList.add("hide")
+},3000)
+
+}
+
+player.addEventListener("mousemove",showControls)
+player.addEventListener("touchstart",showControls)
+video.addEventListener("play",showControls)
+video.addEventListener("pause",()=>controls.classList.remove("hide"))
 
 </script>
 
