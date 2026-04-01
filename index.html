@@ -16,16 +16,12 @@ color:white;
 font-family:Arial;
 }
 
-/* sticky */
-
 .sticky-player{
 position:sticky;
 top:0;
 z-index:999;
 background:#000;
 }
-
-/* video */
 
 .video-container{
 position:relative;
@@ -55,8 +51,6 @@ transition:.3s;
 opacity:0;
 }
 
-/* progress */
-
 .progress-container{
 width:100%;
 height:4px;
@@ -70,15 +64,11 @@ width:0%;
 background:red;
 }
 
-/* time */
-
 .time{
 text-align:center;
 font-size:12px;
 margin:5px 0;
 }
-
-/* bottom */
 
 .bottom-controls{
 display:flex;
@@ -122,15 +112,11 @@ color:white;
 padding:5px;
 }
 
-/* playlist */
-
 .item{
 padding:12px;
 border-bottom:1px solid #333;
 cursor:pointer;
 }
-
-/* pdf viewer */
 
 .pdf-viewer{
 width:100%;
@@ -138,8 +124,6 @@ height:80vh;
 border:none;
 display:none;
 }
-
-/* mobile */
 
 @media(max-width:768px){
 
@@ -225,8 +209,10 @@ const pdfViewer=document.getElementById("pdfViewer");
 let currentHls;
 let playbackSpeed=1;
 let hideTimer;
+let currentType="videos";
+let allItems=[];
 
-/* auto hide controls */
+/* auto hide */
 
 function showControls(){
 
@@ -382,21 +368,23 @@ video.play();
 function openPDF(url){
 
 video.pause();
+
 pdfViewer.style.display="block";
-pdfViewer.src=url;
+pdfViewer.src="https://docs.google.com/gview?embedded=1&url="+url;
 
 }
 
-/* playlist */
-
-let allItems=[];
-const playlist=document.getElementById("playlist");
+/* proxy */
 
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
 
+/* load */
+
 function loadList(type){
+
+currentType=type;
 
 let url= type==="videos"
 ? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
@@ -421,13 +409,17 @@ url:parts.slice(1).join(":").trim()
 
 });
 
-render(allItems,type);
+render(allItems);
 
 });
 
 }
 
-function render(list,type){
+/* render */
+
+function render(list){
+
+const playlist=document.getElementById("playlist");
 
 playlist.innerHTML="";
 
@@ -438,7 +430,7 @@ const div=document.createElement("div");
 div.className="item";
 div.textContent=item.title;
 
-if(type==="arithmetic"){
+if(currentType==="arithmetic" || item.url.endsWith(".pdf")){
 div.onclick=()=>openPDF(item.url);
 }else{
 div.onclick=()=>play(proxy(item.url));
@@ -449,6 +441,8 @@ playlist.appendChild(div);
 });
 
 }
+
+/* search */
 
 function searchVideo(){
 
