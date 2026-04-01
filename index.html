@@ -38,7 +38,7 @@ font-weight:bold;
 background:#000;
 }
 
-/* Sticky topbar */
+/* Sticky Topbar */
 
 .topbar{
 padding:10px;
@@ -50,7 +50,7 @@ background:#111;
 z-index:10;
 }
 
-/* Playlist Scroll */
+/* Playlist */
 
 #playlist{
 overflow-y:auto;
@@ -124,8 +124,6 @@ transform:translateX(-50%);
 border-radius:10px;
 }
 
-/* UI */
-
 button,select,input{
 padding:8px 12px;
 background:#111;
@@ -177,7 +175,7 @@ style="flex:1"
 
 <div id="playerContainer">
 
-<video id="video" controls autoplay></video>
+<video id="video" controls autoplay playsinline></video>
 
 <div class="controls">
 
@@ -223,11 +221,7 @@ const playlist=document.getElementById("playlist")
 const controls=document.querySelector(".controls")
 const player=document.getElementById("playerContainer")
 
-/* Load default */
-
 loadTxt("videos.txt")
-
-/* Load TXT */
 
 function loadTxt(file){
 
@@ -245,34 +239,16 @@ play()
 
 }
 
-/* HLS */
-
 function createHls(){
 
 return new Hls({
-
+enableWorker:true,
+lowLatencyMode:false,
 startLevel:3,
-autoLevelCapping:3,
-
-loader: class extends Hls.DefaultConfig.loader {
-
-load(context, config, callbacks){
-
-context.url =
-"http://127.0.0.1:5000/proxy?url=" +
-encodeURIComponent(context.url)
-
-super.load(context, config, callbacks)
-
-}
-
-}
-
+autoLevelCapping:3
 })
 
 }
-
-/* Play */
 
 function play(){
 
@@ -286,22 +262,34 @@ let url = parts[1]?.trim()
 
 if(!url) return
 
+if(Hls.isSupported()){
+
 if(hls) hls.destroy()
 
 hls = createHls()
 
-hls.loadSource(url)
+// MOBILE FIX (IMPORTANT)
+let proxyUrl = "https://corsproxy.io/?"+encodeURIComponent(url)
+
+hls.loadSource(proxyUrl)
+
 hls.attachMedia(video)
 
 hls.on(Hls.Events.MANIFEST_PARSED,function(){
 video.play()
 })
 
-highlight()
+}
+else{
+
+video.src=url
+video.play()
 
 }
 
-/* Load playlist */
+highlight()
+
+}
 
 function load(){
 
@@ -329,8 +317,6 @@ playlist.appendChild(div)
 
 }
 
-/* Search */
-
 function searchVideo(){
 
 let input = document.getElementById("search").value.toLowerCase()
@@ -346,8 +332,6 @@ item.style.display = text.includes(input) ? "block" : "none"
 })
 
 }
-
-/* Controls */
 
 function next(){
 index++
@@ -375,8 +359,6 @@ hls.currentLevel=parseInt(level)
 }
 }
 
-/* Fullscreen */
-
 function toggleFull(){
 
 if (!document.fullscreenElement) {
@@ -386,8 +368,6 @@ document.exitFullscreen()
 }
 
 }
-
-/* Highlight */
 
 function highlight(){
 
