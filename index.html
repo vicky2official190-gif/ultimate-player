@@ -11,43 +11,50 @@
 
 body{
 background:#000;
-color:white;
-font-family:Arial;
 margin:0;
+font-family:Arial;
+color:white;
 }
 
-/* sticky */
-
-.sticky{
-position:sticky;
-top:0;
-z-index:999;
-background:#000;
-}
-
-/* video */
+/* Video */
 
 .video-container{
 position:relative;
-background:black;
 width:100%;
 height:50vh;
+background:black;
 }
 
 video{
 width:100%;
 height:100%;
 object-fit:contain;
-background:black;
 }
 
-/* progress bar */
+/* controls */
+
+.controls{
+position:absolute;
+bottom:0;
+width:100%;
+background:linear-gradient(transparent,rgba(0,0,0,0.8));
+padding:10px;
+box-sizing:border-box;
+transition:opacity .3s;
+}
+
+.controls.hide{
+opacity:0;
+}
+
+/* progress */
 
 .progress-container{
 width:100%;
-height:5px;
-background:#333;
+height:4px;
+background:#444;
 cursor:pointer;
+margin-bottom:8px;
 }
 
 .progress{
@@ -56,34 +63,24 @@ width:0%;
 background:red;
 }
 
-/* fullscreen */
+/* buttons */
 
-.video-container:fullscreen{
-height:100vh;
-}
-
-.video-container:fullscreen video{
-height:100vh;
-}
-
-/* controls */
-
-.controls{
+.controls-row{
 display:flex;
-justify-content:center;
+align-items:center;
 gap:10px;
-background:#111;
-padding:10px;
 }
 
-.controls button,
-.controls select{
-background:#222;
+button{
+background:none;
+border:none;
 color:white;
-border:1px solid #444;
-padding:6px 12px;
+font-size:16px;
 cursor:pointer;
-border-radius:6px;
+}
+
+input[type="range"]{
+width:100px;
 }
 
 /* header */
@@ -93,13 +90,11 @@ display:flex;
 gap:10px;
 padding:10px;
 background:#111;
-align-items:center;
 }
 
 .btn{
-padding:8px 12px;
 background:#222;
-border-radius:5px;
+padding:6px 12px;
 cursor:pointer;
 }
 
@@ -111,15 +106,10 @@ margin-left:auto;
 background:#222;
 border:1px solid #444;
 color:white;
-padding:7px 10px;
-border-radius:6px;
+padding:5px;
 }
 
 /* playlist */
-
-#playlist{
-padding:10px;
-}
 
 .item{
 padding:10px;
@@ -127,20 +117,10 @@ border-bottom:1px solid #333;
 cursor:pointer;
 }
 
-/* mobile */
-
 @media(max-width:768px){
 
 .video-container{
 height:35vh;
-}
-
-}
-
-@media (orientation: landscape){
-
-.video-container{
-height:100vh;
 }
 
 }
@@ -151,34 +131,43 @@ height:100vh;
 
 <body>
 
-<div class="sticky">
-
 <div class="video-container" id="videoContainer">
 
-<video id="video" playsinline webkit-playsinline></video>
+<video id="video" playsinline></video>
+
+<div class="controls" id="controls">
 
 <div class="progress-container" id="progressContainer">
 <div class="progress" id="progress"></div>
 </div>
 
-</div>
+<div class="controls-row">
 
-<div class="controls">
+<button onclick="togglePlay()">▶</button>
 
-<button onclick="rewind()">⏪ 10s</button>
-<button onclick="forward()">⏩ 10s</button>
+<button onclick="rewind()">⏪</button>
+<button onclick="forward()">⏩</button>
+
+<span id="time">00:00 / 00:00</span>
+
+<input type="range" min="0" max="1" step="0.01"
+oninput="video.volume=this.value">
 
 <select onchange="changeSpeed(this.value)">
-<option value="0.5">0.5x</option>
-<option value="0.75">0.75x</option>
-<option value="1" selected>1x</option>
-<option value="1.25">1.25x</option>
-<option value="1.5">1.5x</option>
-<option value="1.75">1.75x</option>
-<option value="2">2x</option>
+<option>0.5</option>
+<option>0.75</option>
+<option selected>1</option>
+<option>1.25</option>
+<option>1.5</option>
+<option>1.75</option>
+<option>2</option>
 </select>
 
 <button onclick="toggleFullscreen()">⛶</button>
+
+</div>
+
+</div>
 
 </div>
 
@@ -187,9 +176,7 @@ height:100vh;
 <div class="btn" onclick="loadList('arithmetic')">Arithmetic</div>
 
 <div class="search">
-<input type="text" id="search" placeholder="Search..." onkeyup="searchVideo()">
-</div>
-
+<input id="search" placeholder="Search" onkeyup="searchVideo()">
 </div>
 
 </div>
@@ -198,128 +185,72 @@ height:100vh;
 
 <script>
 
-const video=document.getElementById('video');
-const playlist=document.getElementById('playlist');
-const progress=document.getElementById('progress');
-const progressContainer=document.getElementById('progressContainer');
+const video=document.getElementById("video");
+const progress=document.getElementById("progress");
+const progressContainer=document.getElementById("progressContainer");
+const controls=document.getElementById("controls");
+const time=document.getElementById("time");
 
 let currentHls;
-let allItems=[];
+let hideTimer;
 
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
 
-function loadList(type){
+/* play */
 
-playlist.innerHTML="Loading...";
-allItems=[];
+function togglePlay(){
 
-let url= type==="videos"
-? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
-: "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
-
-fetch(url)
-.then(res=>res.text())
-.then(data=>{
-
-playlist.innerHTML="";
-const lines=data.split('\n');
-
-lines.forEach(line=>{
-
-if(line.includes("http")){
-
-const parts=line.split(":");
-const title=parts[0];
-const videoUrl=parts.slice(1).join(":").trim();
-
-allItems.push({title,videoUrl});
-renderList(allItems);
-
-}
-
-});
-
-});
-
-}
-
-function renderList(list){
-
-playlist.innerHTML="";
-
-list.forEach(item=>{
-
-const div=document.createElement("div");
-div.className="item";
-div.textContent=item.title;
-
-div.onclick=()=>{
-playVideo(proxy(item.videoUrl));
-};
-
-playlist.appendChild(div);
-
-});
-
-}
-
-function searchVideo(){
-
-const search=document.getElementById("search").value.toLowerCase();
-
-const filtered=allItems.filter(item =>
-item.title.toLowerCase().includes(search)
-);
-
-renderList(filtered);
-
-}
-
-function playVideo(url){
-
-if(currentHls) currentHls.destroy();
-
-if(Hls.isSupported()){
-currentHls=new Hls();
-currentHls.loadSource(url);
-currentHls.attachMedia(video);
-
-currentHls.on(Hls.Events.MANIFEST_PARSED,()=>video.play());
-
-}else{
-video.src=url;
+if(video.paused){
 video.play();
+}else{
+video.pause();
 }
 
 }
 
-/* progress bar */
-
-video.addEventListener('timeupdate',()=>{
-const percent=(video.currentTime/video.duration)*100;
-progress.style.width=percent+"%";
-});
-
-progressContainer.addEventListener('click',(e)=>{
-
-const width=progressContainer.clientWidth;
-const clickX=e.offsetX;
-const duration=video.duration;
-
-video.currentTime=(clickX/width)*duration;
-
-});
-
-/* controls */
+/* skip */
 
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
 
-function changeSpeed(speed){
-video.playbackRate=speed;
+/* progress */
+
+video.addEventListener("timeupdate",()=>{
+
+const percent=(video.currentTime/video.duration)*100;
+progress.style.width=percent+"%";
+
+time.innerText=
+format(video.currentTime)+" / "+format(video.duration);
+
+});
+
+/* click seek */
+
+progressContainer.addEventListener("click",(e)=>{
+
+const width=progressContainer.clientWidth;
+const click=e.offsetX;
+video.currentTime=(click/width)*video.duration;
+
+});
+
+/* format */
+
+function format(t){
+
+if(!t) return "00:00";
+
+let m=Math.floor(t/60);
+let s=Math.floor(t%60);
+
+return `${m}:${s<10?"0":""}${s}`;
+
 }
+
+/* fullscreen */
 
 function toggleFullscreen(){
 
@@ -333,23 +264,35 @@ document.exitFullscreen();
 
 }
 
-/* double click pause */
+/* speed */
 
-video.addEventListener("dblclick",togglePlay);
-
-function togglePlay(){
-
-if(video.paused){
-video.play();
-}else{
-video.pause();
+function changeSpeed(s){
+video.playbackRate=s;
 }
 
+/* auto hide */
+
+function showControls(){
+
+controls.classList.remove("hide");
+
+clearTimeout(hideTimer);
+
+hideTimer=setTimeout(()=>{
+controls.classList.add("hide");
+},3000);
+
 }
 
-/* space pause */
+document.getElementById("videoContainer")
+.addEventListener("mousemove",showControls);
 
-document.addEventListener("keydown",e=>{
+document.getElementById("videoContainer")
+.addEventListener("touchstart",showControls);
+
+/* keyboard */
+
+document.addEventListener("keydown",(e)=>{
 
 if(e.code==="Space"){
 e.preventDefault();
@@ -360,6 +303,94 @@ if(e.key==="ArrowRight") forward();
 if(e.key==="ArrowLeft") rewind();
 
 });
+
+/* double click */
+
+video.addEventListener("dblclick",togglePlay);
+
+/* load list */
+
+let allItems=[];
+const playlist=document.getElementById("playlist");
+
+function loadList(type){
+
+let url= type==="videos"
+? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
+: "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
+
+fetch(url).then(r=>r.text()).then(data=>{
+
+allItems=[];
+playlist.innerHTML="";
+
+data.split("\n").forEach(line=>{
+
+if(line.includes("http")){
+
+const parts=line.split(":");
+const title=parts[0];
+const videoUrl=parts.slice(1).join(":").trim();
+
+allItems.push({title,videoUrl});
+
+}
+
+});
+
+render(allItems);
+
+});
+
+}
+
+function render(list){
+
+playlist.innerHTML="";
+
+list.forEach(item=>{
+
+const div=document.createElement("div");
+div.className="item";
+div.textContent=item.title;
+
+div.onclick=()=>play(proxy(item.videoUrl));
+
+playlist.appendChild(div);
+
+});
+
+}
+
+function searchVideo(){
+
+const q=document.getElementById("search").value.toLowerCase();
+
+render(allItems.filter(i=>i.title.toLowerCase().includes(q)));
+
+}
+
+/* play */
+
+function play(url){
+
+if(currentHls) currentHls.destroy();
+
+if(Hls.isSupported()){
+
+currentHls=new Hls();
+currentHls.loadSource(url);
+currentHls.attachMedia(video);
+
+}else{
+
+video.src=url;
+
+}
+
+video.play();
+
+}
 
 loadList("videos");
 
