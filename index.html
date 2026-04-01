@@ -10,7 +10,7 @@
 
 body{
 margin:0;
-background:#000;
+background:black;
 color:white;
 font-family:Arial;
 }
@@ -29,19 +29,18 @@ flex-direction:column;
 
 .logo{
 padding:10px;
-font-size:18px;
 background:#000;
 }
 
 .top{
 display:flex;
 gap:5px;
-padding:8px;
+padding:10px;
 }
 
 #playlist{
-overflow:auto;
 flex:1;
+overflow:auto;
 }
 
 .item{
@@ -67,13 +66,13 @@ flex-direction:column;
 .player{
 flex:1;
 position:relative;
-background:black;
 }
 
 video{
 width:100%;
 height:100%;
 object-fit:contain;
+background:black;
 }
 
 .controls{
@@ -103,11 +102,11 @@ flex-direction:column;
 }
 
 .main{
-height:230px;
+height:220px;
 }
 
 .sidebar{
-height:calc(100vh - 230px);
+height:calc(100vh - 220px);
 width:100%;
 }
 
@@ -125,9 +124,9 @@ width:100%;
 
 <div class="player">
 
-<video id="video" controls playsinline></video>
+<video id="video" controls playsinline webkit-playsinline></video>
 
-<div class="controls" id="controls">
+<div class="controls">
 
 <button onclick="prev()">⏮</button>
 <button onclick="skip(-10)">⏪10s</button>
@@ -142,7 +141,7 @@ width:100%;
 <option value="2">2x</option>
 </select>
 
-<select id="quality"></select>
+<select id="quality" onchange="quality(this.value)"></select>
 
 <button onclick="fullscreen()">⛶</button>
 
@@ -178,6 +177,7 @@ width:100%;
 let list=[]
 let index=0
 let hls
+let video=document.getElementById("video")
 
 loadFile("videos.txt")
 
@@ -219,18 +219,16 @@ playlist.appendChild(div)
 
 function play(url){
 
-const video=document.getElementById("video")
-
 if(hls){
 hls.destroy()
 }
 
-hls=new Hls({
+if(Hls.isSupported()){
 
+hls=new Hls({
 maxBufferLength:30,
 maxMaxBufferLength:60,
 enableWorker:true
-
 })
 
 hls.loadSource(
@@ -250,9 +248,24 @@ hls.levels.forEach((l,i)=>{
 q.innerHTML+=`<option value="${i}">${l.height}p</option>`
 })
 
+video.play()
+
 })
 
+}else{
+
+video.src=url
 video.play()
+
+}
+
+}
+
+function quality(i){
+
+if(hls){
+hls.currentLevel=parseInt(i)
+}
 
 }
 
