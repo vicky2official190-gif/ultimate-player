@@ -73,7 +73,7 @@ height:100%;
 object-fit:contain;
 }
 
-/* Controls (Same UI as before) */
+/* Controls */
 
 .controls{
 position:absolute;
@@ -153,6 +153,10 @@ height:calc(100vh - 220px);
 
 <select id="quality" onchange="setQuality(this.value)">
 <option value="-1">Auto</option>
+<option value="0">240p</option>
+<option value="1">360p</option>
+<option value="2">480p</option>
+<option value="3">720p</option>
 </select>
 
 <button onclick="toggleFull()">⛶</button>
@@ -218,16 +222,16 @@ let url=line.split(" : ")[1].trim()
 
 if(hls) hls.destroy()
 
-/* Smooth Mobile Optimized */
+/* Enhanced Performance */
 
 hls=new Hls({
 
 enableWorker:true,
 lowLatencyMode:false,
 
-maxBufferLength:20,
-maxMaxBufferLength:40,
-backBufferLength:60,
+backBufferLength:90,
+maxBufferLength:25,
+maxMaxBufferLength:50,
 
 capLevelToPlayerSize:true,
 startLevel:-1,
@@ -287,10 +291,12 @@ video.playbackRate=v
 }
 
 function setQuality(level){
-if(hls) hls.currentLevel=parseInt(level)
+
+if(hls){
+hls.currentLevel=parseInt(level)
 }
 
-/* Rotate Fullscreen */
+}
 
 function toggleFull(){
 
