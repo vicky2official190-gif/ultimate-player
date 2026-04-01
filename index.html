@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Ultimate Player</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -9,53 +9,54 @@
 <style>
 
 body{
-background:#0b0b0b;
+margin:0;
+background:black;
 color:white;
 font-family:Arial;
-margin:0;
 overflow:hidden;
 }
+
+/* Layout */
 
 .container{
 display:flex;
 height:100vh;
 }
 
-/* Sidebar */
-
 .sidebar{
 width:300px;
 background:#111;
 display:flex;
 flex-direction:column;
-border-right:1px solid #222;
-transition:0.3s;
+transition:.3s;
+}
+
+.sidebar.hide{
+left:-100%;
 }
 
 .logo{
 padding:15px;
-font-size:20px;
-font-weight:bold;
 background:#000;
+font-size:18px;
 }
 
 .topbar{
-padding:10px;
 display:flex;
 gap:5px;
+padding:10px;
 background:#111;
 }
 
 #playlist{
-overflow-y:auto;
 flex:1;
+overflow:auto;
 }
 
 .item{
 padding:12px;
-cursor:pointer;
 border-bottom:1px solid #222;
-font-size:14px;
+cursor:pointer;
 }
 
 .item:hover{
@@ -76,29 +77,29 @@ flex-direction:column;
 
 #playerContainer{
 flex:1;
-display:flex;
-flex-direction:column;
-background:black;
 position:relative;
+background:black;
 }
 
 video{
 width:100%;
 height:100%;
 object-fit:contain;
-background:black;
 }
 
 /* Controls */
 
 .controls{
+position:absolute;
+bottom:10px;
+left:50%;
+transform:translateX(-50%);
 display:flex;
-justify-content:center;
 gap:8px;
+background:rgba(0,0,0,.6);
 padding:8px;
-background:rgba(0,0,0,0.7);
-transition:opacity 0.3s;
-flex-wrap:wrap;
+border-radius:12px;
+transition:.3s;
 }
 
 .controls.hide{
@@ -106,46 +107,33 @@ opacity:0;
 pointer-events:none;
 }
 
-#playerContainer:fullscreen video{
-height:100vh;
-width:100vw;
-}
-
-#playerContainer:fullscreen .controls{
-position:absolute;
-bottom:20px;
-left:50%;
-transform:translateX(-50%);
-border-radius:10px;
-}
-
-/* Buttons */
-
-button,select,input{
-padding:8px;
+button,select{
 background:#111;
 color:white;
 border:1px solid #333;
-cursor:pointer;
-font-size:14px;
+padding:6px 8px;
+border-radius:6px;
 }
 
-/* Mobile View */
+/* Mobile */
 
 .mobile-toggle{
 display:none;
 padding:10px;
-background:#000;
-cursor:pointer;
+background:black;
 }
 
 @media(max-width:768px){
 
+.container{
+flex-direction:column;
+}
+
 .sidebar{
 position:absolute;
-left:-100%;
 height:100%;
-z-index:1000;
+z-index:999;
+left:-100%;
 }
 
 .sidebar.show{
@@ -156,22 +144,10 @@ left:0;
 display:block;
 }
 
-.container{
-flex-direction:column;
-}
-
-.main{
-height:100%;
-}
-
 .controls{
-position:absolute;
-bottom:0;
-width:100%;
-}
-
-video{
-height:100%;
+width:95%;
+justify-content:center;
+flex-wrap:wrap;
 }
 
 }
@@ -191,20 +167,19 @@ height:100%;
 <div class="sidebar" id="sidebar">
 
 <div class="logo">
-🎬 Ultimate Player
+Ultimate Player
 </div>
 
 <div class="topbar">
 
-<select onchange="loadTxt(this.value)" style="flex:1">
+<select onchange="loadTxt(this.value)">
 <option value="videos.txt">Videos</option>
 <option value="arithmetic.txt">Arithmetic</option>
 </select>
 
 <input 
-type="text"
 id="search"
-placeholder="Search..."
+placeholder="Search"
 onkeyup="searchVideo()"
 style="flex:1"
 >
@@ -219,13 +194,13 @@ style="flex:1"
 
 <div id="playerContainer">
 
-<video id="video" controls autoplay playsinline></video>
+<video id="video" playsinline controls></video>
 
-<div class="controls">
+<div class="controls" id="controls">
 
 <button onclick="prev()">⏮</button>
-<button onclick="skip(-10)">⏪10s</button>
-<button onclick="skip(10)">⏩10s</button>
+<button onclick="skip(-10)">⏪</button>
+<button onclick="skip(10)">⏩</button>
 <button onclick="next()">⏭</button>
 
 <select onchange="speed(this.value)">
@@ -234,6 +209,10 @@ style="flex:1"
 <option value="1.5">1.5x</option>
 <option value="1.75">1.75x</option>
 <option value="2">2x</option>
+</select>
+
+<select onchange="quality(this.value)" id="quality">
+<option value="-1">Auto</option>
 </select>
 
 <button onclick="toggleFull()">⛶</button>
@@ -254,7 +233,7 @@ let hls
 
 const video=document.getElementById("video")
 const playlist=document.getElementById("playlist")
-const controls=document.querySelector(".controls")
+const controls=document.getElementById("controls")
 const player=document.getElementById("playerContainer")
 
 loadTxt("videos.txt")
@@ -266,20 +245,10 @@ fetch(file)
 .then(data=>{
 
 list=data.split("\n").filter(x=>x.trim())
-
 index=0
 load()
 play()
 
-})
-
-}
-
-function createHls(){
-
-return new Hls({
-enableWorker:true,
-lowLatencyMode:false
 })
 
 }
@@ -290,28 +259,105 @@ let line=list[index]
 
 if(!line.includes(" : ")) return
 
-let parts=line.split(" : ")
-
-let url=parts[1].trim()
+let url=line.split(" : ")[1].trim()
 
 if(hls) hls.destroy()
 
-hls=createHls()
+hls=new Hls()
 
 hls.loadSource("/api/proxy?url="+encodeURIComponent(url))
+
 hls.attachMedia(video)
+
+hls.on(Hls.Events.MANIFEST_PARSED, function(){
+
+video.play()
+
+let quality=document.getElementById("quality")
+
+quality.innerHTML='<option value="-1">Auto</option>'
+
+hls.levels.forEach((l,i)=>{
+quality.innerHTML+=`<option value="${i}">${l.height}p</option>`
+})
+
+})
 
 highlight()
 
 }
+
+/* Quality */
+
+function quality(level){
+
+if(hls){
+hls.currentLevel=parseInt(level)
+}
+
+}
+
+/* Controls */
+
+function next(){index++;play()}
+function prev(){index--;play()}
+function skip(s){video.currentTime+=s}
+
+function speed(v){
+video.playbackRate=v
+}
+
+/* Fullscreen + rotate */
+
+function toggleFull(){
+
+if(!document.fullscreenElement){
+
+player.requestFullscreen()
+
+if(screen.orientation && screen.orientation.lock){
+screen.orientation.lock("landscape")
+}
+
+}else{
+
+document.exitFullscreen()
+
+if(screen.orientation){
+screen.orientation.unlock()
+}
+
+}
+
+}
+
+/* Sidebar */
+
+function toggleSidebar(){
+document.getElementById("sidebar").classList.toggle("show")
+}
+
+/* Search */
+
+function searchVideo(){
+
+let val=document.getElementById("search").value.toLowerCase()
+
+document.querySelectorAll(".item").forEach(x=>{
+x.style.display=
+x.textContent.toLowerCase().includes(val)
+?"block":"none"
+})
+
+}
+
+/* Playlist */
 
 function load(){
 
 playlist.innerHTML=""
 
 list.forEach((item,i)=>{
-
-if(!item.includes(" : ")) return
 
 let name=item.split(" : ")[0]
 
@@ -332,47 +378,12 @@ playlist.appendChild(div)
 
 }
 
-function toggleSidebar(){
-document.getElementById("sidebar").classList.toggle("show")
-}
-
-function searchVideo(){
-
-let input=document.getElementById("search").value.toLowerCase()
-
-document.querySelectorAll(".item").forEach(item=>{
-
-item.style.display=
-item.textContent.toLowerCase().includes(input)
-? "block" : "none"
-
-})
-
-}
-
-function next(){index++;play()}
-function prev(){index--;play()}
-function skip(s){video.currentTime+=s}
-
-function speed(v){video.playbackRate=v}
-
-function toggleFull(){
-
-if(!document.fullscreenElement){
-player.requestFullscreen()
-}else{
-document.exitFullscreen()
-}
-
-}
-
 function highlight(){
 
 document.querySelectorAll(".item")
 .forEach(x=>x.classList.remove("active"))
 
-document.querySelectorAll(".item")[index]
-?.classList.add("active")
+document.querySelectorAll(".item")[index]?.classList.add("active")
 
 }
 
