@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Player</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+
+body{
+background:#0b0b0b;
+color:white;
+font-family:Arial;
+margin:0;
+overflow:hidden;
+}
+
+.container{
+display:flex;
+height:100vh;
+}
+
+/* Sidebar */
+
+.sidebar{
+width:300px;
+background:#111;
+display:flex;
+flex-direction:column;
+border-right:1px solid #222;
+}
+
+.logo{
+padding:15px;
+font-size:20px;
+font-weight:bold;
+background:#000;
+}
+
+/* Sticky topbar */
+
+.topbar{
+padding:10px;
+display:flex;
+gap:5px;
+position:sticky;
+top:0;
+background:#111;
+z-index:10;
+}
+
+/* Playlist Scroll */
+
+#playlist{
+overflow-y:auto;
+flex:1;
+}
+
+.item{
+padding:10px;
+cursor:pointer;
+border-bottom:1px solid #222;
+}
+
+.item:hover{
+background:#222;
+}
+
+.active{
+background:#333;
+}
+
+/* Player */
+
+.main{
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+#playerContainer{
+flex:1;
+display:flex;
+flex-direction:column;
+background:black;
+position:relative;
+}
+
+video{
+width:100%;
+height:100%;
+object-fit:contain;
+background:black;
+}
+
+/* Controls */
+
+.controls{
+display:flex;
+justify-content:center;
+gap:10px;
+padding:10px;
+background:rgba(0,0,0,0.6);
+transition:opacity 0.3s;
+}
+
+.controls.hide{
+opacity:0;
+pointer-events:none;
+}
+
+#playerContainer:fullscreen video{
+height:100vh;
+width:100vw;
+object-fit:contain;
+}
+
+#playerContainer:fullscreen .controls{
+position:absolute;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+border-radius:10px;
+}
+
+/* UI */
+
+button,select,input{
+padding:8px 12px;
+background:#111;
+color:white;
+border:1px solid #333;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- Sidebar -->
+
+<div class="sidebar">
+
+<div class="logo">
+🎬 Ultimate Player
+</div>
+
+<div class="topbar">
+
+<select onchange="loadTxt(this.value)" style="flex:1">
+<option value="videos.txt">Videos</option>
+<option value="arithmetic.txt">Arithmetic</option>
+</select>
+
+<input 
+type="text"
+id="search"
+placeholder="Search..."
+onkeyup="searchVideo()"
+style="flex:1"
+>
+
+</div>
+
+<div id="playlist"></div>
+
+</div>
+
+<!-- Player -->
+
+<div class="main">
+
+<div id="playerContainer">
+
+<video id="video" controls autoplay></video>
+
+<div class="controls">
+
+<button onclick="prev()">⏮</button>
+<button onclick="skip(-10)">⏪10s</button>
+<button onclick="skip(10)">⏩10s</button>
+<button onclick="next()">⏭</button>
+
+<select onchange="speed(this.value)">
+<option value="1">1x</option>
+<option value="1.25">1.25x</option>
+<option value="1.5">1.5x</option>
+<option value="1.75">1.75x</option>
+<option value="2">2x</option>
+</select>
+
+<select onchange="setQuality(this.value)">
+<option value="-1">Auto</option>
+<option value="0">240p</option>
+<option value="1">360p</option>
+<option value="2">480p</option>
+<option value="3" selected>720p</option>
+</select>
+
+<button onclick="toggleFull()">⛶</button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let list=[]
+let index=0
+let hls
+
+const video=document.getElementById("video")
+const playlist=document.getElementById("playlist")
+const controls=document.querySelector(".controls")
+const player=document.getElementById("playerContainer")
+
+/* Load default */
+
+loadTxt("videos.txt")
+
+/* Load TXT */
+
+function loadTxt(file){
+
+fetch(file)
+.then(r=>r.text())
+.then(data=>{
+
+list=data.split("\n").filter(x=>x.trim())
+
+index=0
+load()
+play()
+
+})
+
+}
+
+/* HLS */
+
+function createHls(){
+
+return new Hls({
+
+startLevel:3,
+autoLevelCapping:3,
+
+loader: class extends Hls.DefaultConfig.loader {
+
+load(context, config, callbacks){
+
+context.url =
+"http://127.0.0.1:5000/proxy?url=" +
+encodeURIComponent(context.url)
+
+super.load(context, config, callbacks)
+
+}
+
+}
+
+})
+
+}
+
+/* Play */
+
+function play(){
+
+let line = list[index]
+
+if(!line || !line.includes(" : ")) return
+
+let parts = line.split(" : ")
+
+let url = parts[1]?.trim()
+
+if(!url) return
+
+if(hls) hls.destroy()
+
+hls = createHls()
+
+hls.loadSource(url)
+hls.attachMedia(video)
+
+hls.on(Hls.Events.MANIFEST_PARSED,function(){
+video.play()
+})
+
+highlight()
+
+}
+
+/* Load playlist */
+
+function load(){
+
+playlist.innerHTML=""
+
+list.forEach((item,i)=>{
+
+if(!item.includes(" : ")) return
+
+let name = item.split(" : ")[0].trim()
+
+let div=document.createElement("div")
+
+div.className="item"
+div.textContent=name
+
+div.onclick=()=>{
+index=i
+play()
+}
+
+playlist.appendChild(div)
+
+})
+
+}
+
+/* Search */
+
+function searchVideo(){
+
+let input = document.getElementById("search").value.toLowerCase()
+
+let items = document.querySelectorAll(".item")
+
+items.forEach(item=>{
+
+let text = item.textContent.toLowerCase()
+
+item.style.display = text.includes(input) ? "block" : "none"
+
+})
+
+}
+
+/* Controls */
+
+function next(){
+index++
+if(index>=list.length) index=0
+play()
+}
+
+function prev(){
+index--
+if(index<0) index=list.length-1
+play()
+}
+
+function skip(seconds){
+video.currentTime += seconds
+}
+
+function speed(v){
+video.playbackRate=v
+}
+
+function setQuality(level){
+if(hls){
+hls.currentLevel=parseInt(level)
+}
+}
+
+/* Fullscreen */
+
+function toggleFull(){
+
+if (!document.fullscreenElement) {
+player.requestFullscreen()
+} else {
+document.exitFullscreen()
+}
+
+}
+
+/* Highlight */
+
+function highlight(){
+
+document.querySelectorAll(".item")
+.forEach(x=>x.classList.remove("active"))
+
+document.querySelectorAll(".item")[index]
+?.classList.add("active")
+
+}
+
+/* Auto hide controls */
+
+let controlTimer
+
+function showControls(){
+
+controls.classList.remove("hide")
+
+clearTimeout(controlTimer)
+
+controlTimer=setTimeout(()=>{
+controls.classList.add("hide")
+},5000)
+
+}
+
+player.addEventListener("mousemove",showControls)
+player.addEventListener("click",showControls)
+
+video.addEventListener("pause",()=>{
+controls.classList.remove("hide")
+})
+
+video.addEventListener("play",showControls)
+
+</script>
+
+</body>
+</html>
