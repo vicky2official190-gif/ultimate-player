@@ -62,8 +62,9 @@ bottom:0;
 width:100%;
 background:linear-gradient(transparent,rgba(0,0,0,0.9));
 padding:10px;
-transition:.3s;
+transition:opacity .3s;
 z-index:3;
+opacity:1;
 }
 
 .controls.hide{
@@ -216,7 +217,9 @@ const pdfViewer=document.getElementById("pdfViewer");
 const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
 const timeDisplay=document.getElementById("timeDisplay");
+const controls=document.getElementById("controls");
 const videoTitle=document.getElementById("videoTitle");
+const videoContainer=document.getElementById("videoContainer");
 
 let currentHls;
 let playbackSpeed=1;
@@ -224,6 +227,26 @@ let currentType="videos";
 let allItems=[];
 let currentVideoUrl="";
 let stopped=false;
+
+/* Auto Hide Controls */
+
+let hideTimer;
+
+function showControls(){
+
+controls.classList.remove("hide");
+
+clearTimeout(hideTimer);
+
+hideTimer=setTimeout(()=>{
+controls.classList.add("hide");
+},3000);
+
+}
+
+videoContainer.addEventListener("mousemove",showControls);
+videoContainer.addEventListener("touchstart",showControls);
+video.addEventListener("play",showControls);
 
 /* Tap & Double Tap */
 
@@ -233,6 +256,8 @@ video.addEventListener("click",handleTap);
 video.addEventListener("touchend",handleTap);
 
 function handleTap(e){
+
+showControls();
 
 const now=Date.now();
 const diff=now-lastTap;
@@ -265,6 +290,8 @@ lastTap=now;
 /* Stop Toggle */
 
 function stopVideo(){
+
+showControls();
 
 if(!stopped){
 video.pause();
@@ -327,8 +354,7 @@ video.playbackRate=playbackSpeed;
 /* Fullscreen */
 
 function toggleFullscreen(){
-const container=document.getElementById("videoContainer");
-document.fullscreenElement?document.exitFullscreen():container.requestFullscreen();
+document.fullscreenElement?document.exitFullscreen():videoContainer.requestFullscreen();
 }
 
 /* Quality */
