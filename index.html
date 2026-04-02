@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Ultimate Player</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -16,16 +18,12 @@ color:white;
 font-family:Arial;
 }
 
-/* sticky */
-
 .sticky-player{
 position:sticky;
 top:0;
 z-index:999;
 background:#000;
 }
-
-/* video */
 
 .video-container{
 position:relative;
@@ -40,8 +38,6 @@ height:100%;
 object-fit:contain;
 }
 
-/* pdf viewer */
-
 .pdf-viewer{
 position:absolute;
 top:0;
@@ -54,15 +50,10 @@ background:white;
 z-index:2;
 }
 
-/* title */
-
 .video-title{
 padding:10px;
 background:#111;
-font-size:14px;
 }
-
-/* controls */
 
 .controls{
 position:absolute;
@@ -94,7 +85,6 @@ background:red;
 .time{
 text-align:center;
 font-size:12px;
-margin:5px 0;
 }
 
 .bottom-controls{
@@ -112,8 +102,6 @@ color:white;
 padding:6px 10px;
 cursor:pointer;
 }
-
-/* header */
 
 .header{
 display:flex;
@@ -139,18 +127,10 @@ color:white;
 padding:5px;
 }
 
-/* playlist */
-
 .item{
 padding:12px;
 border-bottom:1px solid #333;
 cursor:pointer;
-}
-
-@media(max-width:768px){
-.video-container{
-height:30vh;
-}
 }
 
 </style>
@@ -163,7 +143,13 @@ height:30vh;
 
 <div class="video-container" id="videoContainer">
 
-<video id="video" playsinline preload="auto"></video>
+<video 
+id="video"
+playsinline
+webkit-playsinline
+preload="metadata"
+muted
+></video>
 
 <iframe id="pdfViewer" class="pdf-viewer"></iframe>
 
@@ -177,8 +163,8 @@ height:30vh;
 
 <div class="bottom-controls">
 
-<button onclick="rewind()">⏪ 10s</button>
-<button onclick="forward()">⏩ 10s</button>
+<button onclick="rewind()">⏪10</button>
+<button onclick="forward()">10⏩</button>
 
 <select onchange="changeSpeed(this.value)">
 <option>0.5</option>
@@ -238,21 +224,15 @@ let currentType="videos";
 let allItems=[];
 let currentVideoUrl="";
 
-/* proxy */
-
 function proxy(url){
-return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
+return "https://ultimate-player.vicky2official1-90.workers.dev/?url="+encodeURIComponent(url);
 }
-
-/* resume */
 
 video.addEventListener("timeupdate",()=>{
 if(currentVideoUrl){
 localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
 }
 });
-
-/* auto hide */
 
 function showControls(){
 controls.classList.remove("hide");
@@ -262,13 +242,8 @@ controls.classList.add("hide");
 },3000);
 }
 
-document.getElementById("videoContainer")
-.addEventListener("mousemove",showControls);
-
-document.getElementById("videoContainer")
-.addEventListener("touchstart",showControls);
-
-/* format */
+video.addEventListener("mousemove",showControls);
+video.addEventListener("touchstart",showControls);
 
 function format(t){
 if(!t) return "0:00";
@@ -277,48 +252,33 @@ let s=Math.floor(t%60);
 return m+":"+(s<10?"0":"")+s;
 }
 
-/* progress */
-
 video.addEventListener("timeupdate",()=>{
 const percent=(video.currentTime/video.duration)*100;
 progress.style.width=percent+"%";
 timeDisplay.innerText=format(video.currentTime)+" / "+format(video.duration);
 });
 
-/* seek */
-
 progressContainer.addEventListener("click",(e)=>{
 const width=progressContainer.clientWidth;
 video.currentTime=(e.offsetX/width)*video.duration;
 });
 
-/* skip */
-
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
-
-/* speed */
 
 function changeSpeed(speed){
 playbackSpeed=parseFloat(speed);
 video.playbackRate=playbackSpeed;
 }
 
-/* fullscreen */
-
 function toggleFullscreen(){
 const container=document.getElementById("videoContainer");
 if(!document.fullscreenElement){
 container.requestFullscreen();
-if(screen.orientation){
-screen.orientation.lock("landscape").catch(()=>{});
-}
 }else{
 document.exitFullscreen();
 }
 }
-
-/* quality */
 
 function changeQuality(level){
 if(currentHls){
@@ -333,19 +293,13 @@ const quality=document.querySelector(".quality");
 quality.innerHTML='<option value="-1">Auto</option>';
 
 currentHls.levels.forEach((level,index)=>{
-
 const option=document.createElement("option");
-
 option.value=index;
 option.text=level.height+"p";
-
 quality.appendChild(option);
-
 });
 
 }
-
-/* optimized play */
 
 function play(url,title){
 
@@ -359,11 +313,11 @@ videoTitle.innerText=title;
 if(currentHls) currentHls.destroy();
 
 currentHls=new Hls({
-maxBufferLength:30,
-maxMaxBufferLength:60,
-startLevel:1,
-maxBufferHole:0.5,
-lowLatencyMode:true
+lowLatencyMode:true,
+startLevel:0,
+maxBufferLength:6,
+maxMaxBufferLength:12,
+enableWorker:true
 });
 
 currentHls.loadSource(url);
@@ -378,28 +332,26 @@ if(saved) video.currentTime=saved;
 
 video.playbackRate=playbackSpeed;
 
-video.play();
+video.muted=true;
+video.play().then(()=>{
+video.muted=false;
+});
 
 });
 
 }
 
-/* pdf */
-
 function openPDF(url,title){
 
 video.pause();
-
 video.style.display="none";
-pdfViewer.style.display="block";
 
+pdfViewer.style.display="block";
 videoTitle.innerText=title;
 
 pdfViewer.src=proxy(url);
 
 }
-
-/* load */
 
 function loadList(type){
 
@@ -434,8 +386,6 @@ render(allItems);
 
 }
 
-/* render */
-
 function render(list){
 
 const playlist=document.getElementById("playlist");
@@ -449,7 +399,7 @@ const div=document.createElement("div");
 div.className="item";
 div.textContent=item.title;
 
-if(currentType==="arithmetic" || item.url.endsWith(".pdf")){
+if(currentType==="arithmetic"){
 div.onclick=()=>openPDF(item.url,item.title);
 }else{
 div.onclick=()=>play(proxy(item.url),item.title);
@@ -461,12 +411,9 @@ playlist.appendChild(div);
 
 }
 
-/* search */
-
 function searchVideo(){
 
 const q=document.getElementById("search").value.toLowerCase();
-
 render(allItems.filter(i=>i.title.toLowerCase().includes(q)));
 
 }
