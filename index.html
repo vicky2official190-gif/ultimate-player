@@ -295,6 +295,52 @@ videoContainer.requestFullscreen();
 document.exitFullscreen();
 }
 }
+  /* =========================
+   AUTO HIDE CONTROLS 3 SEC
+========================= */
+
+const controls = document.getElementById("controls");
+let hideTimeout;
+
+function showControls(){
+controls.classList.remove("hide");
+
+clearTimeout(hideTimeout);
+
+hideTimeout=setTimeout(()=>{
+controls.classList.add("hide");
+},3000);
+}
+
+videoContainer.addEventListener("mousemove",showControls);
+videoContainer.addEventListener("touchstart",showControls);
+videoContainer.addEventListener("click",showControls);
+
+showControls();
+
+
+
+/* =========================
+   MOBILE AUTO ROTATE
+========================= */
+
+document.addEventListener("fullscreenchange",()=>{
+
+if(document.fullscreenElement){
+
+if(screen.orientation && screen.orientation.lock){
+screen.orientation.lock("landscape").catch(()=>{});
+}
+
+}else{
+
+if(screen.orientation && screen.orientation.unlock){
+screen.orientation.unlock();
+}
+
+}
+
+});
 
 /* Progress */
 
