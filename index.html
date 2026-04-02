@@ -38,8 +38,6 @@ height:100%;
 object-fit:contain;
 }
 
-/* PDF Viewer */
-
 .pdf-viewer{
 position:absolute;
 top:0;
@@ -51,8 +49,6 @@ display:none;
 background:white;
 z-index:2;
 }
-
-/* YouTube Style Animation */
 
 .tap-indicator{
 position:absolute;
@@ -67,17 +63,10 @@ pointer-events:none;
 transition:.3s;
 }
 
-.tap-left{
-left:20%;
-}
+.tap-left{left:20%;}
+.tap-right{right:20%;}
 
-.tap-right{
-right:20%;
-}
-
-.tap-indicator.show{
-opacity:1;
-}
+.tap-indicator.show{opacity:1;}
 
 .video-title{
 padding:10px;
@@ -95,9 +84,7 @@ transition:.3s;
 z-index:3;
 }
 
-.controls.hide{
-opacity:0;
-}
+.controls.hide{opacity:0;}
 
 .progress-container{
 width:100%;
@@ -150,9 +137,7 @@ padding:6px 12px;
 cursor:pointer;
 }
 
-.search{
-margin-left:auto;
-}
+.search{margin-left:auto;}
 
 .search input{
 background:#222;
@@ -173,9 +158,7 @@ border-left:4px solid red;
 }
 
 @media(max-width:768px){
-.video-container{
-height:30vh;
-}
+.video-container{height:30vh;}
 }
 
 </style>
@@ -203,7 +186,6 @@ height:30vh;
 <div class="time" id="timeDisplay">0:00 / 0:00</div>
 
 <div class="bottom-controls">
-
 <button onclick="rewind()">⏪ 10s</button>
 <button onclick="stopVideo()">⏹ Stop</button>
 <button onclick="forward()">⏩ 10s</button>
@@ -227,22 +209,17 @@ height:30vh;
 </div>
 
 </div>
-
 </div>
 
-<div class="video-title" id="videoTitle">
-No Lecture Playing
-</div>
+<div class="video-title" id="videoTitle">No Lecture Playing</div>
 
 <div class="header">
-
 <div class="btn" onclick="loadList('videos')">Videos</div>
 <div class="btn" onclick="loadList('arithmetic')">Arithmetic</div>
 
 <div class="search">
 <input id="search" placeholder="Search" onkeyup="searchVideo()">
 </div>
-
 </div>
 
 </div>
@@ -266,129 +243,51 @@ const tapRight=document.getElementById("tapRight");
 let currentHls;
 let stopped=false;
 
-/* Auto Hide */
-
-let hideTimer;
-
-function showControls(){
-controls.classList.remove("hide");
-clearTimeout(hideTimer);
-hideTimer=setTimeout(()=>{
-controls.classList.add("hide");
-},3000);
-}
-
-videoContainer.addEventListener("mousemove",showControls);
-videoContainer.addEventListener("pointerdown",showControls);
-
 /* Double Tap */
 
-let lastTap = 0;
+let lastTap=0;
 
-video.addEventListener("pointerup", handleDoubleTap);
+video.addEventListener("pointerup",(e)=>{
 
-function handleDoubleTap(e){
+const now=Date.now();
 
-const now = Date.now();
+if(now-lastTap<300){
 
-if(now - lastTap < 300){
+const rect=video.getBoundingClientRect();
+const x=e.clientX;
 
-const rect = video.getBoundingClientRect();
-const x = e.clientX;
-
-if(x < rect.left + rect.width / 2){
-
-video.currentTime -= 10;
-showTapLeft();
-
-}else{
-
-video.currentTime += 10;
-showTapRight();
-
-}
-
-lastTap = 0;
-
-}else{
-lastTap = now;
-}
-
-}
-
-function showTapLeft(){
+if(x < rect.left + rect.width/2){
+video.currentTime-=10;
 tapLeft.classList.add("show");
 setTimeout(()=>tapLeft.classList.remove("show"),500);
-}
-
-function showTapRight(){
+}else{
+video.currentTime+=10;
 tapRight.classList.add("show");
 setTimeout(()=>tapRight.classList.remove("show"),500);
 }
 
+lastTap=0;
+
+}else{
+lastTap=now;
+}
+
+});
+
 /* Stop */
 
 function stopVideo(){
-if(!stopped){
-video.pause();
-stopped=true;
-}else{
-video.play();
-stopped=false;
-}
+video.paused?video.play():video.pause();
 }
 
 /* Fullscreen */
 
 function toggleFullscreen(){
-
 if(!document.fullscreenElement){
 videoContainer.requestFullscreen();
-screen.orientation?.lock("landscape").catch(()=>{});
 }else{
 document.exitFullscreen();
-screen.orientation?.unlock?.();
 }
-
-}
-
-/* Progress */
-
-video.addEventListener("timeupdate",()=>{
-
-if(video.duration){
-
-const percent=(video.currentTime/video.duration)*100;
-progress.style.width=percent+"%";
-
-timeDisplay.innerText=
-format(video.currentTime)+" / "+format(video.duration);
-
-}
-
-});
-
-function format(t){
-if(!t) return "0:00";
-let m=Math.floor(t/60);
-let s=Math.floor(t%60);
-return m+":"+(s<10?"0":"")+s;
-}
-
-progressContainer.addEventListener("click",(e)=>{
-
-if(video.duration){
-const width=progressContainer.clientWidth;
-video.currentTime=(e.offsetX/width)*video.duration;
-}
-
-});
-
-function rewind(){ video.currentTime-=10 }
-function forward(){ video.currentTime+=10 }
-
-function changeSpeed(speed){
-video.playbackRate=parseFloat(speed);
 }
 
 /* Play */
@@ -407,7 +306,16 @@ if(currentHls) currentHls.destroy();
 
 url="https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 
-currentHls=new Hls();
+/* LOW LATENCY HLS */
+
+currentHls=new Hls({
+lowLatencyMode:true,
+maxBufferLength:5,
+maxMaxBufferLength:10,
+startLevel:-1,
+backBufferLength:5
+});
+
 currentHls.loadSource(url);
 currentHls.attachMedia(video);
 
@@ -438,7 +346,7 @@ videoTitle.innerText=title;
 
 function loadList(type){
 
-let url = type==="videos"
+let url=type==="videos"
 ? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
 : "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
 
