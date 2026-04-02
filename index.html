@@ -228,6 +228,8 @@ let allItems=[];
 let currentVideoUrl="";
 let stopped=false;
 
+/* Auto Hide Controls */
+
 let hideTimer;
 
 function showControls(){
@@ -242,11 +244,13 @@ videoContainer.addEventListener("mousemove",showControls);
 videoContainer.addEventListener("touchstart",showControls);
 video.addEventListener("play",showControls);
 
+/* Double Tap Fix */
+
 let tapTimeout=null;
 let lastTap=0;
 
+video.addEventListener("touchstart",handleTap);
 video.addEventListener("click",handleTap);
-video.addEventListener("touchend",handleTap);
 
 function handleTap(e){
 
@@ -255,17 +259,26 @@ showControls();
 const now=Date.now();
 const delay=300;
 
+let x;
+
+if(e.touches && e.touches.length){
+x = e.touches[0].clientX;
+}else if(e.changedTouches && e.changedTouches.length){
+x = e.changedTouches[0].clientX;
+}else{
+x = e.clientX;
+}
+
 if(lastTap && (now-lastTap)<delay){
 
 clearTimeout(tapTimeout);
 
 const rect=video.getBoundingClientRect();
-const x=e.clientX || e.changedTouches?.[0]?.clientX;
 
 if(x < rect.left + rect.width/2){
-video.currentTime-=10;
+video.currentTime -= 10;
 }else{
-video.currentTime+=10;
+video.currentTime += 10;
 }
 
 lastTap=0;
@@ -283,6 +296,8 @@ lastTap=0;
 
 }
 
+/* Stop Toggle */
+
 function stopVideo(){
 
 showControls();
@@ -297,14 +312,14 @@ stopped=false;
 
 }
 
+/* Fullscreen Rotation Fix */
+
 function toggleFullscreen(){
 
 if(!document.fullscreenElement){
 
 videoContainer.requestFullscreen().then(()=>{
-if(screen.orientation?.lock){
-screen.orientation.lock("landscape").catch(()=>{});
-}
+screen.orientation?.lock("landscape").catch(()=>{});
 });
 
 }else{
@@ -325,15 +340,21 @@ screen.orientation?.unlock?.();
 video.addEventListener("webkitbeginfullscreen",()=>showControls());
 video.addEventListener("webkitendfullscreen",()=>showControls());
 
+/* Proxy */
+
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
+
+/* Resume */
 
 video.addEventListener("timeupdate",()=>{
 if(currentVideoUrl){
 localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
 }
 });
+
+/* Progress */
 
 video.addEventListener("timeupdate",()=>{
 const percent=(video.currentTime/video.duration)*100;
