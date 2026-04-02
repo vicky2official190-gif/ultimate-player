@@ -471,16 +471,17 @@ if(currentHls) currentHls.destroy();
 url="https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 
 currentHls=new Hls({
-lowLatencyMode:true,
-maxBufferLength:3,
-maxMaxBufferLength:6,
-startLevel:0,
-backBufferLength:3,
-enableWorker:true,
-liveSyncDurationCount:1,
-maxBufferHole:0.5
-});
 
+lowLatencyMode:true,
+maxBufferLength:15,
+maxMaxBufferLength:30,
+startLevel:-1,
+backBufferLength:10,
+enableWorker:true,
+liveSyncDurationCount:3,
+maxBufferHole:0.5
+
+});
 currentHls.loadSource(url);
 currentHls.attachMedia(video);
 
