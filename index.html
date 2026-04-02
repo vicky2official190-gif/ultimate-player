@@ -163,6 +163,7 @@ height:30vh;
 <div class="time" id="timeDisplay">0:00 / 0:00</div>
 
 <div class="bottom-controls">
+
 <button onclick="rewind()">⏪ 10s</button>
 <button onclick="stopVideo()">⏹ Stop</button>
 <button onclick="forward()">⏩ 10s</button>
@@ -184,18 +185,24 @@ height:30vh;
 <button onclick="toggleFullscreen()">⛶</button>
 
 </div>
-</div>
+
 </div>
 
-<div class="video-title" id="videoTitle">No video playing</div>
+</div>
+
+<div class="video-title" id="videoTitle">
+No video playing
+</div>
 
 <div class="header">
+
 <div class="btn" onclick="loadList('videos')">Videos</div>
 <div class="btn" onclick="loadList('arithmetic')">Arithmetic</div>
 
 <div class="search">
 <input id="search" placeholder="Search" onkeyup="searchVideo()">
 </div>
+
 </div>
 
 </div>
@@ -203,8 +210,6 @@ height:30vh;
 <div id="playlist"></div>
 
 <script>
-
-/* FULL ORIGINAL SCRIPT RESTORED + FIXES */
 
 const video=document.getElementById("video");
 const pdfViewer=document.getElementById("pdfViewer");
@@ -221,7 +226,7 @@ let currentType="videos";
 let allItems=[];
 let currentVideoUrl="";
 
-/* TAP + DOUBLE TAP */
+/* tap & double tap */
 
 let lastTap=0;
 
@@ -247,9 +252,17 @@ video.currentTime+=10;
 }else{
 
 setTimeout(()=>{
+
 if(new Date().getTime()-lastTap>=300){
-video.paused?video.play():video.pause();
+
+if(video.paused){
+video.play().catch(()=>{});
+}else{
+video.pause();
 }
+
+}
+
 },300)
 
 }
@@ -258,19 +271,19 @@ lastTap=now;
 
 }
 
-/* STOP */
+/* stop */
 
 function stopVideo(){
 video.pause();
 }
 
-/* PROXY */
+/* proxy */
 
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
 
-/* RESUME */
+/* resume */
 
 video.addEventListener("timeupdate",()=>{
 if(currentVideoUrl){
@@ -278,7 +291,7 @@ localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
 }
 });
 
-/* PROGRESS */
+/* progress */
 
 video.addEventListener("timeupdate",()=>{
 const percent=(video.currentTime/video.duration)*100;
@@ -293,33 +306,33 @@ let s=Math.floor(t%60);
 return m+":"+(s<10?"0":"")+s;
 }
 
-/* SEEK */
+/* seek */
 
 progressContainer.addEventListener("click",(e)=>{
 const width=progressContainer.clientWidth;
 video.currentTime=(e.offsetX/width)*video.duration;
 });
 
-/* SKIP */
+/* skip */
 
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
 
-/* SPEED */
+/* speed */
 
 function changeSpeed(speed){
 playbackSpeed=parseFloat(speed);
 video.playbackRate=playbackSpeed;
 }
 
-/* FULLSCREEN */
+/* fullscreen */
 
 function toggleFullscreen(){
 const container=document.getElementById("videoContainer");
 document.fullscreenElement?document.exitFullscreen():container.requestFullscreen();
 }
 
-/* QUALITY */
+/* quality */
 
 function changeQuality(level){
 if(currentHls) currentHls.currentLevel=level;
@@ -336,7 +349,7 @@ quality.appendChild(option);
 });
 }
 
-/* PLAY */
+/* play */
 
 function play(url,title){
 
@@ -367,7 +380,7 @@ video.play();
 
 }
 
-/* PDF */
+/* pdf */
 
 function openPDF(url,title){
 video.pause();
@@ -377,7 +390,7 @@ videoTitle.innerText=title;
 pdfViewer.src=proxy(url);
 }
 
-/* LOAD LIST */
+/* load */
 
 function loadList(type){
 
@@ -409,7 +422,7 @@ render(allItems);
 
 }
 
-/* RENDER */
+/* render */
 
 function render(list){
 
@@ -434,7 +447,7 @@ playlist.appendChild(div);
 
 }
 
-/* SEARCH */
+/* search */
 
 function searchVideo(){
 const q=document.getElementById("search").value.toLowerCase();
