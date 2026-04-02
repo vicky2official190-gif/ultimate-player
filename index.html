@@ -6,6 +6,7 @@
 <title>Ultimate Player</title>
 
 <link rel="icon" href="data:,">
+
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
@@ -138,7 +139,6 @@ cursor:pointer;
 
 .item.active{
 background:#222;
-color:#fff;
 border-left:4px solid red;
 }
 
@@ -228,26 +228,18 @@ const controls=document.getElementById("controls");
 const videoTitle=document.getElementById("videoTitle");
 
 let currentHls;
-let playbackSpeed=1;
-let currentType="videos";
-let allItems=[];
-let currentVideoUrl="";
 let stopped=false;
 
-/* Auto Hide Controls */
+/* Auto Hide */
 
 let hideTimer;
 
 function showControls(){
-
 controls.classList.remove("hide");
-
 clearTimeout(hideTimer);
-
 hideTimer=setTimeout(()=>{
 controls.classList.add("hide");
 },3000);
-
 }
 
 videoContainer.addEventListener("mousemove",showControls);
@@ -270,7 +262,7 @@ if(now-lastTap<300){
 
 let x;
 
-if(e.changedTouches && e.changedTouches.length){
+if(e.changedTouches){
 x=e.changedTouches[0].clientX;
 }else{
 x=e.clientX;
@@ -390,9 +382,9 @@ video.play();
 
 function loadList(type){
 
-let url= type==="videos"
-? "videos.txt"
-: "arithmetic.txt";
+let url = type==="videos"
+? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
+: "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
 
 fetch(url).then(r=>r.text()).then(data=>{
 
@@ -406,11 +398,10 @@ if(line.includes("http")){
 const parts=line.split(":");
 
 const div=document.createElement("div");
-
 div.className="item";
 div.textContent=parts[0];
 
-div.onclick=()=>play(parts[1],parts[0],div);
+div.onclick=()=>play(parts.slice(1).join(":"),parts[0],div);
 
 playlist.appendChild(div);
 
