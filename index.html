@@ -44,6 +44,35 @@ background:#111;
 font-size:14px;
 }
 
+/* Double Tap Animation */
+
+.tap-indicator{
+position:absolute;
+top:50%;
+transform:translateY(-50%);
+font-size:28px;
+background:rgba(0,0,0,.5);
+padding:20px;
+border-radius:50%;
+opacity:0;
+pointer-events:none;
+transition:.3s;
+}
+
+.tap-left{
+left:20%;
+}
+
+.tap-right{
+right:20%;
+}
+
+.tap-indicator.show{
+opacity:1;
+}
+
+/* Controls */
+
 .controls{
 position:absolute;
 bottom:0;
@@ -149,6 +178,9 @@ height:30vh;
 
 <video id="video" playsinline webkit-playsinline></video>
 
+<div class="tap-indicator tap-left" id="tapLeft">⏪ 10s</div>
+<div class="tap-indicator tap-right" id="tapRight">⏩ 10s</div>
+
 <div class="controls" id="controls">
 
 <div class="progress-container" id="progressContainer">
@@ -214,6 +246,9 @@ const timeDisplay=document.getElementById("timeDisplay");
 const controls=document.getElementById("controls");
 const videoTitle=document.getElementById("videoTitle");
 
+const tapLeft=document.getElementById("tapLeft");
+const tapRight=document.getElementById("tapRight");
+
 let currentHls;
 let stopped=false;
 
@@ -232,11 +267,12 @@ controls.classList.add("hide");
 videoContainer.addEventListener("mousemove",showControls);
 videoContainer.addEventListener("touchstart",showControls);
 
-/* Double Tap Mobile + PC */
+/* Double Tap Only */
 
 let lastTap=0;
+let tapTimer;
 
-video.addEventListener("touchstart",handleDoubleTap,{passive:true});
+video.addEventListener("touchend",handleDoubleTap);
 video.addEventListener("click",handleDoubleTap);
 
 function handleDoubleTap(e){
@@ -245,27 +281,47 @@ showControls();
 
 const now=Date.now();
 
+if(lastTap && (now-lastTap)<300){
+
+clearTimeout(tapTimer);
+
 let x;
 
-if(e.touches && e.touches.length){
-x=e.touches[0].clientX;
+if(e.changedTouches){
+x=e.changedTouches[0].clientX;
 }else{
 x=e.clientX;
 }
 
-if(now-lastTap<300){
-
 const rect=video.getBoundingClientRect();
 
 if(x < rect.left + rect.width/2){
+
 video.currentTime -= 10;
+
+tapLeft.classList.add("show");
+setTimeout(()=>tapLeft.classList.remove("show"),500);
+
 }else{
+
 video.currentTime += 10;
-}
+
+tapRight.classList.add("show");
+setTimeout(()=>tapRight.classList.remove("show"),500);
 
 }
+
+lastTap=0;
+
+}else{
 
 lastTap=now;
+
+tapTimer=setTimeout(()=>{
+lastTap=0;
+},300);
+
+}
 
 }
 
@@ -313,16 +369,12 @@ format(video.currentTime)+" / "+format(video.duration);
 
 });
 
-/* Format */
-
 function format(t){
 if(!t) return "0:00";
 let m=Math.floor(t/60);
 let s=Math.floor(t%60);
 return m+":"+(s<10?"0":"")+s;
 }
-
-/* Seek */
 
 progressContainer.addEventListener("click",(e)=>{
 
@@ -339,8 +391,6 @@ function forward(){ video.currentTime+=10 }
 function changeSpeed(speed){
 video.playbackRate=parseFloat(speed);
 }
-
-/* Play */
 
 function play(url,title,element){
 
@@ -362,8 +412,6 @@ video.play();
 });
 
 }
-
-/* Load */
 
 function loadList(type){
 
@@ -397,8 +445,6 @@ playlist.appendChild(div);
 });
 
 }
-
-/* Search */
 
 function searchVideo(){
 
