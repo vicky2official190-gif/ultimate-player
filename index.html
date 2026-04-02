@@ -214,27 +214,15 @@ No video playing
 
 const video=document.getElementById("video");
 const pdfViewer=document.getElementById("pdfViewer");
-const progress=document.getElementById("progress");
-const progressContainer=document.getElementById("progressContainer");
-const timeDisplay=document.getElementById("timeDisplay");
-const controls=document.getElementById("controls");
-const videoTitle=document.getElementById("videoTitle");
-
-let currentHls;
-let playbackSpeed=1;
-let hideTimer;
-let currentType="videos";
-let allItems=[];
-let currentVideoUrl="";
-
-/* double tap */
 
 let lastTap=0;
 
-video.addEventListener("click",handleDoubleTap);
-video.addEventListener("touchend",handleDoubleTap);
+/* tap + double tap */
 
-function handleDoubleTap(e){
+video.addEventListener("click",handleTap);
+video.addEventListener("touchend",handleTap);
+
+function handleTap(e){
 
 const now=new Date().getTime();
 const diff=now-lastTap;
@@ -250,6 +238,20 @@ video.currentTime-=10;
 video.currentTime+=10;
 }
 
+}else{
+
+setTimeout(()=>{
+if(new Date().getTime()-lastTap>=300){
+
+if(video.paused){
+video.play();
+}else{
+video.pause();
+}
+
+}
+},300)
+
 }
 
 lastTap=now;
@@ -262,214 +264,4 @@ function stopVideo(){
 video.pause();
 }
 
-/* proxy */
-
-function proxy(url){
-return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
-}
-
-/* resume */
-
-video.addEventListener("timeupdate",()=>{
-if(currentVideoUrl){
-localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
-}
-});
-
-/* auto hide */
-
-function showControls(){
-controls.classList.remove("hide");
-clearTimeout(hideTimer);
-hideTimer=setTimeout(()=>{
-controls.classList.add("hide");
-},3000);
-}
-
-document.getElementById("videoContainer").addEventListener("mousemove",showControls);
-document.getElementById("videoContainer").addEventListener("touchstart",showControls);
-
-/* format */
-
-function format(t){
-if(!t) return "0:00";
-let m=Math.floor(t/60);
-let s=Math.floor(t%60);
-return m+":"+(s<10?"0":"")+s;
-}
-
-/* progress */
-
-video.addEventListener("timeupdate",()=>{
-const percent=(video.currentTime/video.duration)*100;
-progress.style.width=percent+"%";
-timeDisplay.innerText=format(video.currentTime)+" / "+format(video.duration);
-});
-
-/* seek */
-
-progressContainer.addEventListener("click",(e)=>{
-const width=progressContainer.clientWidth;
-video.currentTime=(e.offsetX/width)*video.duration;
-});
-
-/* skip */
-
-function rewind(){ video.currentTime-=10 }
-function forward(){ video.currentTime+=10 }
-
-/* speed */
-
-function changeSpeed(speed){
-playbackSpeed=parseFloat(speed);
-video.playbackRate=playbackSpeed;
-}
-
-/* fullscreen */
-
-function toggleFullscreen(){
-const container=document.getElementById("videoContainer");
-if(!document.fullscreenElement){
-container.requestFullscreen();
-}else{
-document.exitFullscreen();
-}
-}
-
-/* quality */
-
-function changeQuality(level){
-if(currentHls){
-currentHls.currentLevel=level;
-}
-}
-
-function setupQuality(){
-const quality=document.querySelector(".quality");
-quality.innerHTML='<option value="-1">Auto</option>';
-currentHls.levels.forEach((level,index)=>{
-const option=document.createElement("option");
-option.value=index;
-option.text=level.height+"p";
-quality.appendChild(option);
-});
-}
-
-/* play */
-
-function play(url,title){
-
-currentVideoUrl=url;
-
-pdfViewer.style.display="none";
-video.style.display="block";
-
-videoTitle.innerText=title;
-
-if(currentHls) currentHls.destroy();
-
-currentHls=new Hls();
-
-currentHls.loadSource(url);
-currentHls.attachMedia(video);
-
-currentHls.on(Hls.Events.MANIFEST_PARSED,()=>{
-
-setupQuality();
-
-let saved=localStorage.getItem("progress_"+url);
-if(saved) video.currentTime=saved;
-
-video.playbackRate=playbackSpeed;
-
-video.play();
-
-});
-
-}
-
-/* PDF */
-
-function openPDF(url,title){
-video.pause();
-video.style.display="none";
-pdfViewer.style.display="block";
-videoTitle.innerText=title;
-pdfViewer.src=proxy(url);
-}
-
-/* load */
-
-function loadList(type){
-
-currentType=type;
-
-let url= type==="videos"
-? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
-: "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
-
-fetch(url).then(r=>r.text()).then(data=>{
-
-allItems=[];
-
-data.split("\n").forEach(line=>{
-
-if(line.includes("http")){
-
-const parts=line.split(":");
-
-allItems.push({
-title:parts[0],
-url:parts.slice(1).join(":").trim()
-});
-
-}
-
-});
-
-render(allItems);
-
-});
-
-}
-
-/* render */
-
-function render(list){
-
-const playlist=document.getElementById("playlist");
-
-playlist.innerHTML="";
-
-list.forEach(item=>{
-
-const div=document.createElement("div");
-
-div.className="item";
-div.textContent=item.title;
-
-if(item.url.endsWith(".pdf")){
-div.onclick=()=>openPDF(item.url,item.title);
-}else{
-div.onclick=()=>play(proxy(item.url),item.title);
-}
-
-playlist.appendChild(div);
-
-});
-
-}
-
-/* search */
-
-function searchVideo(){
-const q=document.getElementById("search").value.toLowerCase();
-render(allItems.filter(i=>i.title.toLowerCase().includes(q)));
-}
-
-loadList("videos");
-
 </script>
-
-</body>
-</html>
