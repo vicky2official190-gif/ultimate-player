@@ -6,7 +6,6 @@
 <title>Ultimate Player</title>
 
 <link rel="icon" href="data:,">
-
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
@@ -18,8 +17,6 @@ color:white;
 font-family:Arial;
 overflow-x:hidden;
 }
-
-/* Sticky Player */
 
 .sticky-player{
 position:sticky;
@@ -47,8 +44,6 @@ background:#111;
 font-size:14px;
 }
 
-/* Controls */
-
 .controls{
 position:absolute;
 bottom:0;
@@ -62,8 +57,6 @@ z-index:3;
 .controls.hide{
 opacity:0;
 }
-
-/* Progress */
 
 .progress-container{
 width:100%;
@@ -100,8 +93,6 @@ padding:6px 10px;
 cursor:pointer;
 }
 
-/* Header */
-
 .header{
 display:flex;
 gap:10px;
@@ -128,8 +119,6 @@ border:1px solid #444;
 color:white;
 padding:5px;
 }
-
-/* Playlist */
 
 .item{
 padding:12px;
@@ -228,7 +217,7 @@ const videoTitle=document.getElementById("videoTitle");
 let currentHls;
 let stopped=false;
 
-/* Auto Hide Controls */
+/* Auto Hide */
 
 let hideTimer;
 
@@ -243,11 +232,11 @@ controls.classList.add("hide");
 videoContainer.addEventListener("mousemove",showControls);
 videoContainer.addEventListener("touchstart",showControls);
 
-/* Double Tap Only */
+/* Double Tap Mobile + PC */
 
 let lastTap=0;
 
-video.addEventListener("touchend",handleDoubleTap);
+video.addEventListener("touchstart",handleDoubleTap,{passive:true});
 video.addEventListener("click",handleDoubleTap);
 
 function handleDoubleTap(e){
@@ -256,15 +245,15 @@ showControls();
 
 const now=Date.now();
 
-if(now-lastTap<300){
-
 let x;
 
-if(e.changedTouches){
-x=e.changedTouches[0].clientX;
+if(e.touches && e.touches.length){
+x=e.touches[0].clientX;
 }else{
 x=e.clientX;
 }
+
+if(now-lastTap<300){
 
 const rect=video.getBoundingClientRect();
 
@@ -280,7 +269,7 @@ lastTap=now;
 
 }
 
-/* Stop Toggle */
+/* Stop */
 
 function stopVideo(){
 
@@ -313,11 +302,13 @@ screen.orientation?.unlock?.();
 video.addEventListener("timeupdate",()=>{
 
 if(video.duration){
+
 const percent=(video.currentTime/video.duration)*100;
 progress.style.width=percent+"%";
 
 timeDisplay.innerText=
 format(video.currentTime)+" / "+format(video.duration);
+
 }
 
 });
@@ -331,7 +322,7 @@ let s=Math.floor(t%60);
 return m+":"+(s<10?"0":"")+s;
 }
 
-/* Seek Fix */
+/* Seek */
 
 progressContainer.addEventListener("click",(e)=>{
 
@@ -342,18 +333,14 @@ video.currentTime=(e.offsetX/width)*video.duration;
 
 });
 
-/* Skip */
-
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
-
-/* Speed */
 
 function changeSpeed(speed){
 video.playbackRate=parseFloat(speed);
 }
 
-/* Play with Proxy */
+/* Play */
 
 function play(url,title,element){
 
@@ -363,8 +350,6 @@ element.classList.add("active");
 videoTitle.innerText=title;
 
 if(currentHls) currentHls.destroy();
-
-/* PROXY FIX */
 
 url="https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 
@@ -378,7 +363,7 @@ video.play();
 
 }
 
-/* Load List */
+/* Load */
 
 function loadList(type){
 
