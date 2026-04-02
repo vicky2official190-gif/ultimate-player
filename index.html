@@ -223,8 +223,9 @@ let playbackSpeed=1;
 let currentType="videos";
 let allItems=[];
 let currentVideoUrl="";
+let stopped=false;
 
-/* TAP + DOUBLE TAP */
+/* Tap & Double Tap */
 
 let lastTap=0;
 
@@ -250,11 +251,9 @@ video.currentTime+=10;
 }else{
 
 setTimeout(()=>{
-
 if(Date.now()-lastTap>=300){
 video.paused?video.play().catch(()=>{}):video.pause();
 }
-
 },300);
 
 }
@@ -263,25 +262,27 @@ lastTap=now;
 
 }
 
-/* STOP FIX */
+/* Stop Toggle */
 
 function stopVideo(){
 
+if(!stopped){
 video.pause();
-
-if(currentHls){
-currentHls.startLoad();
+stopped=true;
+}else{
+video.play().catch(()=>{});
+stopped=false;
 }
 
 }
 
-/* PROXY */
+/* Proxy */
 
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
 
-/* RESUME */
+/* Resume */
 
 video.addEventListener("timeupdate",()=>{
 if(currentVideoUrl){
@@ -289,7 +290,7 @@ localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
 }
 });
 
-/* PROGRESS */
+/* Progress */
 
 video.addEventListener("timeupdate",()=>{
 const percent=(video.currentTime/video.duration)*100;
@@ -304,33 +305,33 @@ let s=Math.floor(t%60);
 return m+":"+(s<10?"0":"")+s;
 }
 
-/* SEEK */
+/* Seek */
 
 progressContainer.addEventListener("click",(e)=>{
 const width=progressContainer.clientWidth;
 video.currentTime=(e.offsetX/width)*video.duration;
 });
 
-/* SKIP */
+/* Skip */
 
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
 
-/* SPEED */
+/* Speed */
 
 function changeSpeed(speed){
 playbackSpeed=parseFloat(speed);
 video.playbackRate=playbackSpeed;
 }
 
-/* FULLSCREEN */
+/* Fullscreen */
 
 function toggleFullscreen(){
 const container=document.getElementById("videoContainer");
 document.fullscreenElement?document.exitFullscreen():container.requestFullscreen();
 }
 
-/* QUALITY */
+/* Quality */
 
 function changeQuality(level){
 if(currentHls) currentHls.currentLevel=level;
@@ -347,9 +348,11 @@ quality.appendChild(option);
 });
 }
 
-/* PLAY */
+/* Play */
 
 function play(url,title){
+
+stopped=false;
 
 currentVideoUrl=url;
 
@@ -388,7 +391,7 @@ videoTitle.innerText=title;
 pdfViewer.src=proxy(url);
 }
 
-/* LOAD */
+/* Load */
 
 function loadList(type){
 
@@ -420,7 +423,7 @@ render(allItems);
 
 }
 
-/* RENDER */
+/* Render */
 
 function render(list){
 
@@ -445,7 +448,7 @@ playlist.appendChild(div);
 
 }
 
-/* SEARCH */
+/* Search */
 
 function searchVideo(){
 const q=document.getElementById("search").value.toLowerCase();
