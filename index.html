@@ -38,13 +38,7 @@ height:100%;
 object-fit:contain;
 }
 
-.video-title{
-padding:10px;
-background:#111;
-font-size:14px;
-}
-
-/* Double Tap Animation */
+/* YouTube Style Animation */
 
 .tap-indicator{
 position:absolute;
@@ -71,7 +65,11 @@ right:20%;
 opacity:1;
 }
 
-/* Controls */
+.video-title{
+padding:10px;
+background:#111;
+font-size:14px;
+}
 
 .controls{
 position:absolute;
@@ -265,70 +263,56 @@ controls.classList.add("hide");
 }
 
 videoContainer.addEventListener("mousemove",showControls);
-videoContainer.addEventListener("touchstart",showControls);
+videoContainer.addEventListener("pointerdown",showControls);
 
-/* Double Tap Only */
+/* BEST Double Tap (Pointer Events) */
 
-let lastTap=0;
-let tapTimer;
+let lastTap = 0;
 
-video.addEventListener("touchend",handleDoubleTap);
-video.addEventListener("click",handleDoubleTap);
+video.addEventListener("pointerup", handleDoubleTap);
 
 function handleDoubleTap(e){
 
-showControls();
+const now = Date.now();
 
-const now=Date.now();
+if(now - lastTap < 300){
 
-if(lastTap && (now-lastTap)<300){
+const rect = video.getBoundingClientRect();
+const x = e.clientX;
 
-clearTimeout(tapTimer);
-
-let x;
-
-if(e.changedTouches){
-x=e.changedTouches[0].clientX;
-}else{
-x=e.clientX;
-}
-
-const rect=video.getBoundingClientRect();
-
-if(x < rect.left + rect.width/2){
+if(x < rect.left + rect.width / 2){
 
 video.currentTime -= 10;
-
-tapLeft.classList.add("show");
-setTimeout(()=>tapLeft.classList.remove("show"),500);
+showTapLeft();
 
 }else{
 
 video.currentTime += 10;
-
-tapRight.classList.add("show");
-setTimeout(()=>tapRight.classList.remove("show"),500);
+showTapRight();
 
 }
 
-lastTap=0;
+lastTap = 0;
 
 }else{
-
-lastTap=now;
-
-tapTimer=setTimeout(()=>{
-lastTap=0;
-},300);
+lastTap = now;
+}
 
 }
 
+function showTapLeft(){
+tapLeft.classList.add("show");
+setTimeout(()=>tapLeft.classList.remove("show"),500);
+}
+
+function showTapRight(){
+tapRight.classList.add("show");
+setTimeout(()=>tapRight.classList.remove("show"),500);
 }
 
 /* Stop */
 
 function stopVideo(){
-
 if(!stopped){
 video.pause();
 stopped=true;
@@ -336,7 +320,6 @@ stopped=true;
 video.play();
 stopped=false;
 }
-
 }
 
 /* Fullscreen */
