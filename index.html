@@ -160,6 +160,12 @@ cursor:pointer;
 background:#222;
 border-left:4px solid red;
 }
+.item.watched::after{
+content:"✔";
+float:right;
+color:#00ff88;
+font-weight:bold;
+}
 
 @media(max-width:768px){
 .video-container{ height:30vh; }
@@ -244,6 +250,34 @@ const tapLeft=document.getElementById("tapLeft");
 const tapRight=document.getElementById("tapRight");
 
 let currentHls;
+/* WATCHED VIDEOS */
+
+let currentVideoTitle=null;
+
+function markWatched(title){
+let watched=JSON.parse(localStorage.getItem("watchedVideos")||"[]");
+
+if(!watched.includes(title)){
+watched.push(title);
+localStorage.setItem("watchedVideos",JSON.stringify(watched));
+}
+
+document.querySelectorAll(".item").forEach(item=>{
+if(item.textContent===title){
+item.classList.add("watched");
+}
+});
+}
+
+function loadWatched(){
+let watched=JSON.parse(localStorage.getItem("watchedVideos")||"[]");
+
+document.querySelectorAll(".item").forEach(item=>{
+if(watched.includes(item.textContent)){
+item.classList.add("watched");
+}
+});
+}
 
 /* Double Tap */
 
@@ -357,6 +391,17 @@ format(video.currentTime)+" / "+format(video.duration);
 }
 
 });
+video.addEventListener("timeupdate",()=>{
+
+if(video.duration && currentVideoTitle){
+
+if(video.currentTime / video.duration > 0.95){
+markWatched(currentVideoTitle);
+}
+
+}
+
+});
 
 function format(t){
 if(!t) return "0:00";
@@ -389,6 +434,7 @@ document.querySelectorAll(".item").forEach(i=>i.classList.remove("active"));
 element.classList.add("active");
 
 videoTitle.innerText=title;
+currentVideoTitle=title;
 
 pdfViewer.style.display="none";
 video.style.display="block";
@@ -467,7 +513,7 @@ div.onclick=()=>play(link,parts[0],div);
 }
 
 playlist.appendChild(div);
-
+loadWatched();
 }
 
 });
