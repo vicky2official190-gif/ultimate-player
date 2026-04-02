@@ -216,17 +216,15 @@ const pdfViewer=document.getElementById("pdfViewer");
 const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
 const timeDisplay=document.getElementById("timeDisplay");
-const controls=document.getElementById("controls");
 const videoTitle=document.getElementById("videoTitle");
 
 let currentHls;
 let playbackSpeed=1;
-let hideTimer;
 let currentType="videos";
 let allItems=[];
 let currentVideoUrl="";
 
-/* tap & double tap */
+/* TAP + DOUBLE TAP */
 
 let lastTap=0;
 
@@ -235,13 +233,13 @@ video.addEventListener("touchend",handleTap);
 
 function handleTap(e){
 
-const now=new Date().getTime();
+const now=Date.now();
 const diff=now-lastTap;
 
 if(diff<300){
 
 const rect=video.getBoundingClientRect();
-const x=e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+const x=e.clientX || e.changedTouches?.[0]?.clientX;
 
 if(x < rect.left + rect.width/2){
 video.currentTime-=10;
@@ -253,17 +251,11 @@ video.currentTime+=10;
 
 setTimeout(()=>{
 
-if(new Date().getTime()-lastTap>=300){
-
-if(video.paused){
-video.play().catch(()=>{});
-}else{
-video.pause();
+if(Date.now()-lastTap>=300){
+video.paused?video.play().catch(()=>{}):video.pause();
 }
 
-}
-
-},300)
+},300);
 
 }
 
@@ -271,19 +263,25 @@ lastTap=now;
 
 }
 
-/* stop */
+/* STOP FIX */
 
 function stopVideo(){
+
 video.pause();
+
+if(currentHls){
+currentHls.startLoad();
 }
 
-/* proxy */
+}
+
+/* PROXY */
 
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
 
-/* resume */
+/* RESUME */
 
 video.addEventListener("timeupdate",()=>{
 if(currentVideoUrl){
@@ -291,7 +289,7 @@ localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
 }
 });
 
-/* progress */
+/* PROGRESS */
 
 video.addEventListener("timeupdate",()=>{
 const percent=(video.currentTime/video.duration)*100;
@@ -306,33 +304,33 @@ let s=Math.floor(t%60);
 return m+":"+(s<10?"0":"")+s;
 }
 
-/* seek */
+/* SEEK */
 
 progressContainer.addEventListener("click",(e)=>{
 const width=progressContainer.clientWidth;
 video.currentTime=(e.offsetX/width)*video.duration;
 });
 
-/* skip */
+/* SKIP */
 
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
 
-/* speed */
+/* SPEED */
 
 function changeSpeed(speed){
 playbackSpeed=parseFloat(speed);
 video.playbackRate=playbackSpeed;
 }
 
-/* fullscreen */
+/* FULLSCREEN */
 
 function toggleFullscreen(){
 const container=document.getElementById("videoContainer");
 document.fullscreenElement?document.exitFullscreen():container.requestFullscreen();
 }
 
-/* quality */
+/* QUALITY */
 
 function changeQuality(level){
 if(currentHls) currentHls.currentLevel=level;
@@ -349,7 +347,7 @@ quality.appendChild(option);
 });
 }
 
-/* play */
+/* PLAY */
 
 function play(url,title){
 
@@ -374,13 +372,13 @@ let saved=localStorage.getItem("progress_"+url);
 if(saved) video.currentTime=saved;
 
 video.playbackRate=playbackSpeed;
-video.play();
+video.play().catch(()=>{});
 
 });
 
 }
 
-/* pdf */
+/* PDF */
 
 function openPDF(url,title){
 video.pause();
@@ -390,7 +388,7 @@ videoTitle.innerText=title;
 pdfViewer.src=proxy(url);
 }
 
-/* load */
+/* LOAD */
 
 function loadList(type){
 
@@ -422,7 +420,7 @@ render(allItems);
 
 }
 
-/* render */
+/* RENDER */
 
 function render(list){
 
@@ -447,7 +445,7 @@ playlist.appendChild(div);
 
 }
 
-/* search */
+/* SEARCH */
 
 function searchVideo(){
 const q=document.getElementById("search").value.toLowerCase();
