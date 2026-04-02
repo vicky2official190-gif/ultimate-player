@@ -38,8 +38,6 @@ height:100%;
 object-fit:contain;
 }
 
-/* PDF */
-
 .pdf-viewer{
 position:absolute;
 top:0;
@@ -51,8 +49,6 @@ display:none;
 background:white;
 z-index:2;
 }
-
-/* Double Tap Animation */
 
 .tap-indicator{
 position:absolute;
@@ -88,12 +84,15 @@ transition:.3s;
 z-index:3;
 }
 
-.controls.hide{ opacity:0; }
+.controls.hide{
+opacity:0;
+pointer-events:none;
+}
 
 .progress-container{
 width:100%;
-height:4px;
-background:#444;
+height:6px;
+background:#333;
 cursor:pointer;
 }
 
@@ -101,6 +100,7 @@ cursor:pointer;
 height:100%;
 width:0%;
 background:red;
+transition:width .1s linear;
 }
 
 .time{
@@ -190,7 +190,7 @@ border-left:4px solid red;
 
 <div class="bottom-controls">
 <button onclick="rewind()">⏪ 10s</button>
-<button onclick="stopVideo()">⏹ Stop</button>
+<button onclick="stopVideo()">⏯</button>
 <button onclick="forward()">⏩ 10s</button>
 
 <select onchange="changeSpeed(this.value)">
@@ -203,11 +203,8 @@ border-left:4px solid red;
 <option>2</option>
 </select>
 
-<select class="quality" onchange="changeQuality(this.value)">
-<option value="-1">Auto</option>
-</select>
-
 <button onclick="toggleFullscreen()">⛶</button>
+
 </div>
 
 </div>
@@ -217,15 +214,6 @@ border-left:4px solid red;
 No Lecture Playing
 </div>
 
-<div class="header">
-<div class="btn" onclick="loadList('videos')">Videos</div>
-<div class="btn" onclick="loadList('arithmetic')">Arithmetic</div>
-
-<div class="search">
-<input id="search" placeholder="Search" onkeyup="searchVideo()">
-</div>
-</div>
-
 </div>
 
 <div id="playlist"></div>
@@ -233,19 +221,35 @@ No Lecture Playing
 <script>
 
 const video=document.getElementById("video");
-const pdfViewer=document.getElementById("pdfViewer");
-const videoContainer=document.getElementById("videoContainer");
 const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
 const timeDisplay=document.getElementById("timeDisplay");
-const videoTitle=document.getElementById("videoTitle");
+const controls=document.getElementById("controls");
+const videoContainer=document.getElementById("videoContainer");
 
 const tapLeft=document.getElementById("tapLeft");
 const tapRight=document.getElementById("tapRight");
 
-let currentHls;
+/* Auto hide controls */
 
-/* Double Tap */
+let hideTimer;
+
+function showControls(){
+
+controls.classList.remove("hide");
+
+clearTimeout(hideTimer);
+
+hideTimer=setTimeout(()=>{
+controls.classList.add("hide");
+},3000);
+
+}
+
+videoContainer.addEventListener("mousemove",showControls);
+videoContainer.addEventListener("pointerdown",showControls);
+
+/* Double tap skip */
 
 let lastTap=0;
 
@@ -261,16 +265,16 @@ const x=e.clientX;
 if(x < rect.left + rect.width/2){
 
 video.currentTime-=10;
-tapLeft.classList.add("show");
-setTimeout(()=>tapLeft.classList.remove("show"),500);
+showTapLeft();
 
 }else{
 
 video.currentTime+=10;
-tapRight.classList.add("show");
-setTimeout(()=>tapRight.classList.remove("show"),500);
+showTapRight();
 
 }
+
+updateProgress();
 
 lastTap=0;
 
@@ -280,25 +284,19 @@ lastTap=now;
 
 });
 
-/* Stop */
-
-function stopVideo(){
-video.paused?video.play():video.pause();
+function showTapLeft(){
+tapLeft.classList.add("show");
+setTimeout(()=>tapLeft.classList.remove("show"),500);
 }
 
-/* Fullscreen */
-
-function toggleFullscreen(){
-if(!document.fullscreenElement){
-videoContainer.requestFullscreen();
-}else{
-document.exitFullscreen();
-}
+function showTapRight(){
+tapRight.classList.add("show");
+setTimeout(()=>tapRight.classList.remove("show"),500);
 }
 
-/* Progress */
+/* progress update */
 
-video.addEventListener("timeupdate",()=>{
+function updateProgress(){
 
 if(video.duration){
 
@@ -310,7 +308,44 @@ format(video.currentTime)+" / "+format(video.duration);
 
 }
 
+}
+
+/* time update */
+
+video.addEventListener("timeupdate",updateProgress);
+
+/* seek */
+
+progressContainer.addEventListener("click",(e)=>{
+
+const width=progressContainer.clientWidth;
+const pos=e.offsetX;
+
+video.currentTime=(pos/width)*video.duration;
+
+updateProgress();
+
 });
+
+/* skip buttons */
+
+function rewind(){
+video.currentTime-=10;
+updateProgress();
+}
+
+function forward(){
+video.currentTime+=10;
+updateProgress();
+}
+
+/* play pause */
+
+function stopVideo(){
+video.paused?video.play():video.pause();
+}
+
+/* format */
 
 function format(t){
 if(!t) return "0:00";
@@ -319,133 +354,31 @@ let s=Math.floor(t%60);
 return m+":"+(s<10?"0":"")+s;
 }
 
-progressContainer.addEventListener("click",(e)=>{
+/* fullscreen */
 
-if(video.duration){
-const width=progressContainer.clientWidth;
-video.currentTime=(e.offsetX/width)*video.duration;
+function toggleFullscreen(){
+
+if(!document.fullscreenElement){
+
+videoContainer.requestFullscreen().then(()=>{
+
+if(screen.orientation){
+screen.orientation.lock("landscape").catch(()=>{});
 }
 
 });
 
-function rewind(){ video.currentTime-=10 }
-function forward(){ video.currentTime+=10 }
-
-function changeSpeed(speed){
-video.playbackRate=parseFloat(speed);
-}
-
-/* Play */
-
-function play(url,title,element){
-
-document.querySelectorAll(".item").forEach(i=>i.classList.remove("active"));
-element.classList.add("active");
-
-videoTitle.innerText=title;
-
-pdfViewer.style.display="none";
-video.style.display="block";
-
-if(currentHls) currentHls.destroy();
-
-url="https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
-
-/* ULTRA LOW LATENCY */
-
-currentHls=new Hls({
-lowLatencyMode:true,
-maxBufferLength:3,
-maxMaxBufferLength:6,
-startLevel:0,
-backBufferLength:3,
-enableWorker:true,
-liveSyncDurationCount:1,
-maxBufferHole:0.5
-});
-
-currentHls.loadSource(url);
-currentHls.attachMedia(video);
-
-currentHls.on(Hls.Events.MANIFEST_PARSED,()=>{
-video.play();
-});
-
-}
-
-/* PDF */
-
-function openPDF(url,title,element){
-
-document.querySelectorAll(".item").forEach(i=>i.classList.remove("active"));
-element.classList.add("active");
-
-video.pause();
-video.style.display="none";
-
-pdfViewer.style.display="block";
-pdfViewer.src=url;
-
-videoTitle.innerText=title;
-
-}
-
-/* Load */
-
-function loadList(type){
-
-let url= type==="videos"
-? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
-: "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
-
-fetch(url).then(r=>r.text()).then(data=>{
-
-const playlist=document.getElementById("playlist");
-playlist.innerHTML="";
-
-data.split("\n").forEach(line=>{
-
-if(line.includes("http")){
-
-const parts=line.split(":");
-const link=parts.slice(1).join(":");
-
-const div=document.createElement("div");
-div.className="item";
-div.textContent=parts[0];
-
-if(link.includes(".pdf")){
-div.onclick=()=>openPDF(link,parts[0],div);
 }else{
-div.onclick=()=>play(link,parts[0],div);
+
+document.exitFullscreen();
+
+if(screen.orientation){
+screen.orientation.unlock();
 }
-
-playlist.appendChild(div);
-
-}
-
-});
-
-});
 
 }
 
-function searchVideo(){
-
-const q=document.getElementById("search").value.toLowerCase();
-
-document.querySelectorAll(".item").forEach(item=>{
-
-item.style.display=
-item.textContent.toLowerCase().includes(q)
-? "block"
-: "none";
-
-});
-
 }
-
-loadList("videos");
 
 </script>
 
