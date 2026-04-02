@@ -249,65 +249,46 @@ return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encod
 /* resume */
 
 video.addEventListener("timeupdate",()=>{
-
 if(currentVideoUrl){
 localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
 }
-
 });
 
 /* auto hide */
 
 function showControls(){
-
 controls.classList.remove("hide");
-
 clearTimeout(hideTimer);
-
 hideTimer=setTimeout(()=>{
 controls.classList.add("hide");
 },3000);
-
 }
 
-document.getElementById("videoContainer")
-.addEventListener("mousemove",showControls);
-
-document.getElementById("videoContainer")
-.addEventListener("touchstart",showControls);
+document.getElementById("videoContainer").addEventListener("mousemove",showControls);
+document.getElementById("videoContainer").addEventListener("touchstart",showControls);
 
 /* format */
 
 function format(t){
-
 if(!t) return "0:00";
-
 let m=Math.floor(t/60);
 let s=Math.floor(t%60);
-
 return m+":"+(s<10?"0":"")+s;
-
 }
 
 /* progress */
 
 video.addEventListener("timeupdate",()=>{
-
 const percent=(video.currentTime/video.duration)*100;
 progress.style.width=percent+"%";
-
-timeDisplay.innerText=
-format(video.currentTime)+" / "+format(video.duration);
-
+timeDisplay.innerText=format(video.currentTime)+" / "+format(video.duration);
 });
 
 /* seek */
 
 progressContainer.addEventListener("click",(e)=>{
-
 const width=progressContainer.clientWidth;
 video.currentTime=(e.offsetX/width)*video.duration;
-
 });
 
 /* skip */
@@ -318,61 +299,41 @@ function forward(){ video.currentTime+=10 }
 /* speed */
 
 function changeSpeed(speed){
-
 playbackSpeed=parseFloat(speed);
 video.playbackRate=playbackSpeed;
-
 }
 
 /* fullscreen */
 
 function toggleFullscreen(){
-
 const container=document.getElementById("videoContainer");
-
 if(!document.fullscreenElement){
-
 container.requestFullscreen();
-
 if(screen.orientation){
 screen.orientation.lock("landscape").catch(()=>{});
 }
-
 }else{
-
 document.exitFullscreen();
-
 }
-
 }
 
 /* quality */
 
 function changeQuality(level){
-
 if(currentHls){
 currentHls.currentLevel=level;
 }
-
 }
 
 function setupQuality(){
-
 const quality=document.querySelector(".quality");
-
 quality.innerHTML='<option value="-1">Auto</option>';
-
 currentHls.levels.forEach((level,index)=>{
-
 const option=document.createElement("option");
-
 option.value=index;
 option.text=level.height+"p";
-
 quality.appendChild(option);
-
 });
-
 }
 
 /* play */
@@ -411,16 +372,11 @@ video.play();
 /* PDF viewer */
 
 function openPDF(url,title){
-
 video.pause();
-
 video.style.display="none";
 pdfViewer.style.display="block";
-
 videoTitle.innerText=title;
-
 pdfViewer.src=proxy(url);
-
 }
 
 /* load */
@@ -473,7 +429,7 @@ const div=document.createElement("div");
 div.className="item";
 div.textContent=item.title;
 
-if(currentType==="arithmetic" || item.url.endsWith(".pdf")){
+if(item.url.endsWith(".pdf")){
 div.onclick=()=>openPDF(item.url,item.title);
 }else{
 div.onclick=()=>play(proxy(item.url),item.title);
@@ -488,11 +444,8 @@ playlist.appendChild(div);
 /* search */
 
 function searchVideo(){
-
 const q=document.getElementById("search").value.toLowerCase();
-
 render(allItems.filter(i=>i.title.toLowerCase().includes(q)));
-
 }
 
 loadList("videos");
