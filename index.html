@@ -38,6 +38,20 @@ height:100%;
 object-fit:contain;
 }
 
+/* PDF Viewer */
+
+.pdf-viewer{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+border:none;
+display:none;
+background:white;
+z-index:2;
+}
+
 /* YouTube Style Animation */
 
 .tap-indicator{
@@ -175,6 +189,7 @@ height:30vh;
 <div class="video-container" id="videoContainer">
 
 <video id="video" playsinline webkit-playsinline></video>
+<iframe id="pdfViewer" class="pdf-viewer"></iframe>
 
 <div class="tap-indicator tap-left" id="tapLeft">⏪ 10s</div>
 <div class="tap-indicator tap-right" id="tapRight">⏩ 10s</div>
@@ -237,6 +252,7 @@ No Lecture Playing
 <script>
 
 const video=document.getElementById("video");
+const pdfViewer=document.getElementById("pdfViewer");
 const videoContainer=document.getElementById("videoContainer");
 const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
@@ -265,7 +281,7 @@ controls.classList.add("hide");
 videoContainer.addEventListener("mousemove",showControls);
 videoContainer.addEventListener("pointerdown",showControls);
 
-/* BEST Double Tap (Pointer Events) */
+/* Double Tap */
 
 let lastTap = 0;
 
@@ -375,12 +391,17 @@ function changeSpeed(speed){
 video.playbackRate=parseFloat(speed);
 }
 
+/* Play */
+
 function play(url,title,element){
 
 document.querySelectorAll(".item").forEach(i=>i.classList.remove("active"));
 element.classList.add("active");
 
 videoTitle.innerText=title;
+
+pdfViewer.style.display="none";
+video.style.display="block";
 
 if(currentHls) currentHls.destroy();
 
@@ -395,6 +416,25 @@ video.play();
 });
 
 }
+
+/* PDF */
+
+function openPDF(url,title,element){
+
+document.querySelectorAll(".item").forEach(i=>i.classList.remove("active"));
+element.classList.add("active");
+
+video.pause();
+video.style.display="none";
+
+pdfViewer.style.display="block";
+pdfViewer.src=url;
+
+videoTitle.innerText=title;
+
+}
+
+/* Load */
 
 function loadList(type){
 
@@ -412,12 +452,17 @@ data.split("\n").forEach(line=>{
 if(line.includes("http")){
 
 const parts=line.split(":");
+const link=parts.slice(1).join(":");
 
 const div=document.createElement("div");
 div.className="item";
 div.textContent=parts[0];
 
-div.onclick=()=>play(parts.slice(1).join(":"),parts[0],div);
+if(link.includes(".pdf")){
+div.onclick=()=>openPDF(link,parts[0],div);
+}else{
+div.onclick=()=>play(link,parts[0],div);
+}
 
 playlist.appendChild(div);
 
