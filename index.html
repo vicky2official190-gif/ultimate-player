@@ -152,7 +152,7 @@ height:30vh;
 
 <div class="video-container" id="videoContainer">
 
-<video id="video" playsinline></video>
+<video id="video" playsinline webkit-playsinline></video>
 <iframe id="pdfViewer" class="pdf-viewer"></iframe>
 
 <div class="controls" id="controls">
@@ -213,13 +213,13 @@ No video playing
 <script>
 
 const video=document.getElementById("video");
+const videoContainer=document.getElementById("videoContainer");
 const pdfViewer=document.getElementById("pdfViewer");
 const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
 const timeDisplay=document.getElementById("timeDisplay");
 const controls=document.getElementById("controls");
 const videoTitle=document.getElementById("videoTitle");
-const videoContainer=document.getElementById("videoContainer");
 
 let currentHls;
 let playbackSpeed=1;
@@ -228,28 +228,21 @@ let allItems=[];
 let currentVideoUrl="";
 let stopped=false;
 
-/* Auto Hide Controls */
-
 let hideTimer;
 
 function showControls(){
-
 controls.classList.remove("hide");
-
 clearTimeout(hideTimer);
-
 hideTimer=setTimeout(()=>{
 controls.classList.add("hide");
 },3000);
-
 }
 
 videoContainer.addEventListener("mousemove",showControls);
 videoContainer.addEventListener("touchstart",showControls);
 video.addEventListener("play",showControls);
 
-/* Tap & Double Tap */
-
+let tapTimeout=null;
 let lastTap=0;
 
 video.addEventListener("click",handleTap);
@@ -260,9 +253,11 @@ function handleTap(e){
 showControls();
 
 const now=Date.now();
-const diff=now-lastTap;
+const delay=300;
 
-if(diff<300){
+if(lastTap && (now-lastTap)<delay){
+
+clearTimeout(tapTimeout);
 
 const rect=video.getBoundingClientRect();
 const x=e.clientX || e.changedTouches?.[0]?.clientX;
@@ -273,21 +268,20 @@ video.currentTime-=10;
 video.currentTime+=10;
 }
 
+lastTap=0;
+
 }else{
-
-setTimeout(()=>{
-if(Date.now()-lastTap>=300){
-video.paused?video.play().catch(()=>{}):video.pause();
-}
-},300);
-
-}
 
 lastTap=now;
 
+tapTimeout=setTimeout(()=>{
+video.paused?video.play().catch(()=>{}):video.pause();
+lastTap=0;
+},delay);
+
 }
 
-/* Stop Toggle */
+}
 
 function stopVideo(){
 
@@ -303,21 +297,43 @@ stopped=false;
 
 }
 
-/* Proxy */
+function toggleFullscreen(){
+
+if(!document.fullscreenElement){
+
+videoContainer.requestFullscreen().then(()=>{
+if(screen.orientation?.lock){
+screen.orientation.lock("landscape").catch(()=>{});
+}
+});
+
+}else{
+
+document.exitFullscreen();
+screen.orientation?.unlock?.();
+
+}
+
+}
+
+document.addEventListener("fullscreenchange",()=>{
+if(!document.fullscreenElement){
+screen.orientation?.unlock?.();
+}
+});
+
+video.addEventListener("webkitbeginfullscreen",()=>showControls());
+video.addEventListener("webkitendfullscreen",()=>showControls());
 
 function proxy(url){
 return "https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 }
-
-/* Resume */
 
 video.addEventListener("timeupdate",()=>{
 if(currentVideoUrl){
 localStorage.setItem("progress_"+currentVideoUrl,video.currentTime);
 }
 });
-
-/* Progress */
 
 video.addEventListener("timeupdate",()=>{
 const percent=(video.currentTime/video.duration)*100;
@@ -332,32 +348,18 @@ let s=Math.floor(t%60);
 return m+":"+(s<10?"0":"")+s;
 }
 
-/* Seek */
-
 progressContainer.addEventListener("click",(e)=>{
 const width=progressContainer.clientWidth;
 video.currentTime=(e.offsetX/width)*video.duration;
 });
 
-/* Skip */
-
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
-
-/* Speed */
 
 function changeSpeed(speed){
 playbackSpeed=parseFloat(speed);
 video.playbackRate=playbackSpeed;
 }
-
-/* Fullscreen */
-
-function toggleFullscreen(){
-document.fullscreenElement?document.exitFullscreen():videoContainer.requestFullscreen();
-}
-
-/* Quality */
 
 function changeQuality(level){
 if(currentHls) currentHls.currentLevel=level;
@@ -374,12 +376,9 @@ quality.appendChild(option);
 });
 }
 
-/* Play */
-
 function play(url,title){
 
 stopped=false;
-
 currentVideoUrl=url;
 
 pdfViewer.style.display="none";
@@ -407,8 +406,6 @@ video.play().catch(()=>{});
 
 }
 
-/* PDF */
-
 function openPDF(url,title){
 video.pause();
 video.style.display="none";
@@ -416,8 +413,6 @@ pdfViewer.style.display="block";
 videoTitle.innerText=title;
 pdfViewer.src=proxy(url);
 }
-
-/* Load */
 
 function loadList(type){
 
@@ -432,7 +427,6 @@ fetch(url).then(r=>r.text()).then(data=>{
 allItems=[];
 
 data.split("\n").forEach(line=>{
-
 if(line.includes("http")){
 const parts=line.split(":");
 allItems.push({
@@ -440,7 +434,6 @@ title:parts[0],
 url:parts.slice(1).join(":").trim()
 });
 }
-
 });
 
 render(allItems);
@@ -448,8 +441,6 @@ render(allItems);
 });
 
 }
-
-/* Render */
 
 function render(list){
 
@@ -473,8 +464,6 @@ playlist.appendChild(div);
 });
 
 }
-
-/* Search */
 
 function searchVideo(){
 const q=document.getElementById("search").value.toLowerCase();
