@@ -143,11 +143,9 @@ border-left:4px solid red;
 }
 
 @media(max-width:768px){
-
 .video-container{
 height:30vh;
 }
-
 }
 
 </style>
@@ -230,7 +228,7 @@ const videoTitle=document.getElementById("videoTitle");
 let currentHls;
 let stopped=false;
 
-/* Auto Hide */
+/* Auto Hide Controls */
 
 let hideTimer;
 
@@ -314,33 +312,33 @@ screen.orientation?.unlock?.();
 
 video.addEventListener("timeupdate",()=>{
 
+if(video.duration){
 const percent=(video.currentTime/video.duration)*100;
 progress.style.width=percent+"%";
 
 timeDisplay.innerText=
 format(video.currentTime)+" / "+format(video.duration);
+}
 
 });
 
 /* Format */
 
 function format(t){
-
 if(!t) return "0:00";
-
 let m=Math.floor(t/60);
 let s=Math.floor(t%60);
-
 return m+":"+(s<10?"0":"")+s;
-
 }
 
-/* Seek */
+/* Seek Fix */
 
 progressContainer.addEventListener("click",(e)=>{
 
+if(video.duration){
 const width=progressContainer.clientWidth;
 video.currentTime=(e.offsetX/width)*video.duration;
+}
 
 });
 
@@ -355,7 +353,7 @@ function changeSpeed(speed){
 video.playbackRate=parseFloat(speed);
 }
 
-/* Play */
+/* Play with Proxy */
 
 function play(url,title,element){
 
@@ -366,14 +364,16 @@ videoTitle.innerText=title;
 
 if(currentHls) currentHls.destroy();
 
+/* PROXY FIX */
+
+url="https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
+
 currentHls=new Hls();
 currentHls.loadSource(url);
 currentHls.attachMedia(video);
 
 currentHls.on(Hls.Events.MANIFEST_PARSED,()=>{
-
 video.play();
-
 });
 
 }
