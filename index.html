@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -88,7 +89,10 @@ transition:.3s;
 z-index:3;
 }
 
-.controls.hide{ opacity:0; }
+.controls.hide{ 
+opacity:0;
+pointer-events:none;
+}
 
 .progress-container{
 width:100%;
@@ -160,6 +164,9 @@ cursor:pointer;
 background:#222;
 border-left:4px solid red;
 }
+
+/* WATCHED TICK */
+
 .item.watched::after{
 content:"✔";
 float:right;
@@ -172,6 +179,7 @@ font-weight:bold;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -181,6 +189,7 @@ font-weight:bold;
 <div class="video-container" id="videoContainer">
 
 <video id="video" preload="auto" playsinline webkit-playsinline></video>
+
 <iframe id="pdfViewer" class="pdf-viewer"></iframe>
 
 <div class="tap-indicator tap-left" id="tapLeft">⏪ 10s</div>
@@ -214,6 +223,7 @@ font-weight:bold;
 </select>
 
 <button onclick="toggleFullscreen()">⛶</button>
+
 </div>
 
 </div>
@@ -245,11 +255,13 @@ const progress=document.getElementById("progress");
 const progressContainer=document.getElementById("progressContainer");
 const timeDisplay=document.getElementById("timeDisplay");
 const videoTitle=document.getElementById("videoTitle");
+const controls=document.getElementById("controls");
 
 const tapLeft=document.getElementById("tapLeft");
 const tapRight=document.getElementById("tapRight");
 
 let currentHls;
+
 /* WATCHED VIDEOS */
 
 let currentVideoTitle=null;
@@ -278,6 +290,46 @@ item.classList.add("watched");
 }
 });
 }
+
+/* AUTO HIDE CONTROLS */
+
+let hideTimeout;
+
+function showControls(){
+controls.classList.remove("hide");
+
+clearTimeout(hideTimeout);
+
+hideTimeout=setTimeout(()=>{
+controls.classList.add("hide");
+},3000);
+}
+
+videoContainer.addEventListener("mousemove",showControls);
+videoContainer.addEventListener("touchstart",showControls);
+videoContainer.addEventListener("click",showControls);
+
+showControls();
+
+/* MOBILE ROTATE */
+
+document.addEventListener("fullscreenchange",()=>{
+
+if(document.fullscreenElement){
+
+if(screen.orientation && screen.orientation.lock){
+screen.orientation.lock("landscape").catch(()=>{});
+}
+
+}else{
+
+if(screen.orientation && screen.orientation.unlock){
+screen.orientation.unlock();
+}
+
+}
+
+});
 
 /* Double Tap */
 
@@ -329,52 +381,6 @@ videoContainer.requestFullscreen();
 document.exitFullscreen();
 }
 }
-  /* =========================
-   AUTO HIDE CONTROLS 3 SEC
-========================= */
-
-const controls = document.getElementById("controls");
-let hideTimeout;
-
-function showControls(){
-controls.classList.remove("hide");
-
-clearTimeout(hideTimeout);
-
-hideTimeout=setTimeout(()=>{
-controls.classList.add("hide");
-},3000);
-}
-
-videoContainer.addEventListener("mousemove",showControls);
-videoContainer.addEventListener("touchstart",showControls);
-videoContainer.addEventListener("click",showControls);
-
-showControls();
-
-
-
-/* =========================
-   MOBILE AUTO ROTATE
-========================= */
-
-document.addEventListener("fullscreenchange",()=>{
-
-if(document.fullscreenElement){
-
-if(screen.orientation && screen.orientation.lock){
-screen.orientation.lock("landscape").catch(()=>{});
-}
-
-}else{
-
-if(screen.orientation && screen.orientation.unlock){
-screen.orientation.unlock();
-}
-
-}
-
-});
 
 /* Progress */
 
@@ -390,11 +396,9 @@ format(video.currentTime)+" / "+format(video.duration);
 
 }
 
-});
-video.addEventListener("timeupdate",()=>{
+/* WATCH COMPLETE */
 
 if(video.duration && currentVideoTitle){
-
 if(video.currentTime / video.duration > 0.95){
 markWatched(currentVideoTitle);
 }
@@ -442,8 +446,6 @@ video.style.display="block";
 if(currentHls) currentHls.destroy();
 
 url="https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
-
-/* ULTRA LOW LATENCY */
 
 currentHls=new Hls({
 lowLatencyMode:true,
@@ -513,7 +515,9 @@ div.onclick=()=>play(link,parts[0],div);
 }
 
 playlist.appendChild(div);
+
 loadWatched();
+
 }
 
 });
