@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultimate Player</title>
+<title>Selection Way</title>
 
 <link rel="icon" href="data:,">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -26,17 +26,32 @@ z-index:9999;
 background:#000;
 }
 
-.video-container{
-position:relative;
+#playlist{
+height:calc(100vh - 250px);
+overflow-y:auto;
+padding-bottom:50px;
+}
+video{
 width:100%;
+height:100%;
+object-fit:contain;
+}
+
+/* Mobile Fix */
+
+@media (max-width:768px){
+
+.video-container{
+height:auto;
 aspect-ratio:16/9;
-background:black;
 }
 
 video{
 width:100%;
 height:100%;
 object-fit:cover;
+}
+
 }
 
 /* PDF */
@@ -222,6 +237,26 @@ justify-content:center;
 font-size:14px;
 }
 
+.folder{
+background:#111;
+padding:12px;
+font-weight:bold;
+cursor:pointer;
+border-bottom:1px solid #333;
+}
+
+.folder-items{
+display:none;
+}
+
+.folder-items.open{
+display:block;
+}
+
+.folder-items .item{
+padding-left:20px;
+}
+
 /* WATCHED TICK */
 
 .item.watched::after{
@@ -250,6 +285,22 @@ z-index:5;
 @keyframes spin{
 0%{ transform:translate(-50%,-50%) rotate(0deg); }
 100%{ transform:translate(-50%,-50%) rotate(360deg); }
+}
+.folder{
+padding:12px;
+background:#111;
+font-weight:bold;
+cursor:pointer;
+border-bottom:1px solid #333;
+}
+
+.folder-items{
+display:none;
+background:#000;
+}
+
+.folder.open + .folder-items{
+display:block;
 }
 
 </style>
@@ -552,7 +603,7 @@ video.style.display="block";
 
 if(currentHls) currentHls.destroy();
 
-url="https://ultimate-player.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
+url="https://selection-way.vicky2official1-90.workers.dev/proxy?url="+encodeURIComponent(url);
 
 currentHls=new Hls({
 
@@ -594,20 +645,51 @@ videoTitle.innerText=title;
 
 /* Load */
 
+
 function loadList(type){
 
 let url=
 type==="videos"
-? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
+? "https://selection-way.vicky2official1-90.workers.dev/videos.txt"
 : type==="arithmetic"
-? "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt"
-: "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
+? "https://selection-way.vicky2official1-90.workers.dev/arithmetic.txt"
+: "https://selection-way.vicky2official1-90.workers.dev/pdf.txt";
 fetch(url).then(r=>r.text()).then(data=>{
 
 const playlist=document.getElementById("playlist");
 playlist.innerHTML="";
 
+let folder=null;
+
 data.split("\n").forEach(line=>{
+
+line=line.trim();
+
+if(!line) return;
+
+if(line.startsWith("#")){
+
+const f=document.createElement("div");
+f.className="folder";
+f.textContent=line.replace("#","");
+
+const items=document.createElement("div");
+items.className="folder-items";
+
+f.onclick=()=>{
+items.classList.toggle("open");
+f.classList.toggle("open");
+}
+playlist.appendChild(f);
+playlist.appendChild(items);
+
+folder=items;
+
+return;
+}
+
+
+
 if(type==="pdf" && !line.includes(".pdf")) return;
 
 if(line.includes("http")){
@@ -625,7 +707,7 @@ div.onclick=()=>openPDF(link,parts[0],div);
 div.onclick=()=>play(link,parts[0],div);
 }
 
-playlist.appendChild(div);
+(folder || playlist).appendChild(div);
 
 loadWatched();
 
@@ -636,6 +718,8 @@ loadWatched();
 });
 
 }
+
+
 
 function searchVideo(){
 
