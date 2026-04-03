@@ -100,7 +100,12 @@ height:4px;
 background:#444;
 cursor:pointer;
 }
-
+.buffer{
+height:100%;
+width:0%;
+background:#777;
+position:absolute;
+}
 .progress{
 height:100%;
 width:0%;
@@ -221,6 +226,7 @@ font-weight:bold;
 <div class="controls" id="controls">
 
 <div class="progress-container" id="progressContainer">
+<div class="buffer" id="buffer"></div>
 <div class="progress" id="progress"></div>
 </div>
 
@@ -275,6 +281,7 @@ const video=document.getElementById("video");
 const pdfViewer=document.getElementById("pdfViewer");
 const videoContainer=document.getElementById("videoContainer");
 const progress=document.getElementById("progress");
+const buffer=document.getElementById("buffer");
 const progressContainer=document.getElementById("progressContainer");
 const timeDisplay=document.getElementById("timeDisplay");
 const videoTitle=document.getElementById("videoTitle");
@@ -445,7 +452,18 @@ video.currentTime=(e.offsetX/width)*video.duration;
 }
 
 });
+video.addEventListener("progress",()=>{
 
+if(video.buffered.length>0){
+
+const bufferedEnd=video.buffered.end(video.buffered.length-1);
+const percent=(bufferedEnd/video.duration)*100;
+
+buffer.style.width=percent+"%";
+
+}
+
+});
 function rewind(){ video.currentTime-=10 }
 function forward(){ video.currentTime+=10 }
 
