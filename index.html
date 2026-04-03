@@ -295,6 +295,7 @@ No Lecture Playing
 <div class="header">
 <div class="btn" onclick="loadList('videos')">Videos</div>
 <div class="btn" onclick="loadList('arithmetic')">Arithmetic</div>
+<div class="btn" onclick="loadList('pdf')">PDF</div>
 
 <div class="search">
 <input id="search" placeholder="Search" onkeyup="searchVideo()">
@@ -576,16 +577,19 @@ videoTitle.innerText=title;
 
 function loadList(type){
 
-let url= type==="videos"
+let url=
+type==="videos"
 ? "https://ultimate-player.vicky2official1-90.workers.dev/videos.txt"
+: type==="arithmetic"
+? "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt"
 : "https://ultimate-player.vicky2official1-90.workers.dev/arithmetic.txt";
-
 fetch(url).then(r=>r.text()).then(data=>{
 
 const playlist=document.getElementById("playlist");
 playlist.innerHTML="";
 
 data.split("\n").forEach(line=>{
+if(type==="pdf" && !line.includes(".pdf")) return;
 
 if(line.includes("http")){
 
