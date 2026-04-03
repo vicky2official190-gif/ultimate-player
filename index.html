@@ -251,22 +251,6 @@ z-index:5;
 0%{ transform:translate(-50%,-50%) rotate(0deg); }
 100%{ transform:translate(-50%,-50%) rotate(360deg); }
 }
-.folder{
-padding:12px;
-background:#111;
-font-weight:bold;
-cursor:pointer;
-border-bottom:1px solid #333;
-}
-
-.folder-items{
-display:none;
-background:#000;
-}
-
-.folder.open + .folder-items{
-display:block;
-}
 
 </style>
 
@@ -623,27 +607,7 @@ fetch(url).then(r=>r.text()).then(data=>{
 const playlist=document.getElementById("playlist");
 playlist.innerHTML="";
 
-let folder=null;
-
 data.split("\n").forEach(line=>{
-if(line.startsWith("#")){
-
-const f=document.createElement("div");
-f.className="folder";
-f.textContent=line.replace("#","");
-
-const items=document.createElement("div");
-items.className="folder-items";
-
-f.onclick=()=>f.classList.toggle("open");
-
-playlist.appendChild(f);
-playlist.appendChild(items);
-
-folder=items;
-
-return;
-}
 if(type==="pdf" && !line.includes(".pdf")) return;
 
 if(line.includes("http")){
@@ -661,7 +625,7 @@ div.onclick=()=>openPDF(link,parts[0],div);
 div.onclick=()=>play(link,parts[0],div);
 }
 
-(folder || playlist).appendChild(div);
+playlist.appendChild(div);
 
 loadWatched();
 
