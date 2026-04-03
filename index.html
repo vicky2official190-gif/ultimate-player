@@ -234,6 +234,25 @@ font-weight:bold;
 @media(max-width:768px){
 .video-container{ height:30vh; }
 }
+.loader{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:40px;
+height:40px;
+border:4px solid rgba(255,255,255,0.3);
+border-top:4px solid white;
+border-radius:50%;
+animation:spin 1s linear infinite;
+display:none;
+z-index:5;
+}
+
+@keyframes spin{
+0%{ transform:translate(-50%,-50%) rotate(0deg); }
+100%{ transform:translate(-50%,-50%) rotate(360deg); }
+}
 
 </style>
 
@@ -246,6 +265,7 @@ font-weight:bold;
 <div class="video-container" id="videoContainer">
 
 <video id="video" preload="auto" playsinline webkit-playsinline></video>
+<div class="loader" id="loader"></div>
 
 <iframe id="pdfViewer" class="pdf-viewer"></iframe>
 
@@ -309,6 +329,7 @@ No Lecture Playing
 <script>
 
 const video=document.getElementById("video");
+const loader=document.getElementById("loader");
 const pdfViewer=document.getElementById("pdfViewer");
 const videoContainer=document.getElementById("videoContainer");
 const progress=document.getElementById("progress");
@@ -634,6 +655,15 @@ item.textContent.toLowerCase().includes(q)
 }
 
 loadList("videos");
+loadList("videos");
+
+video.addEventListener("waiting",()=>{
+loader.style.display="block";
+});
+
+video.addEventListener("playing",()=>{
+loader.style.display="none";
+});
 
 </script>
 
