@@ -127,6 +127,17 @@ transition:width .1s linear;
 .progress-container:hover{
 height:7px;
 }
+.hover-time{
+position:absolute;
+bottom:15px;
+background:black;
+color:white;
+padding:3px 6px;
+font-size:11px;
+border-radius:4px;
+display:none;
+transform:translateX(-50%);
+}
 .time{
 text-align:center;
 font-size:12px;
@@ -243,6 +254,7 @@ font-weight:bold;
 <div class="progress-container" id="progressContainer">
 <div class="buffer" id="buffer"></div>
 <div class="progress" id="progress"></div>
+<div class="hover-time" id="hoverTime">0:00</div>
 </div>
 
 <div class="time" id="timeDisplay">0:00 / 0:00</div>
@@ -298,6 +310,7 @@ const videoContainer=document.getElementById("videoContainer");
 const progress=document.getElementById("progress");
 const buffer=document.getElementById("buffer");
 const progressContainer=document.getElementById("progressContainer");
+const hoverTime=document.getElementById("hoverTime");
 const timeDisplay=document.getElementById("timeDisplay");
 const videoTitle=document.getElementById("videoTitle");
 const controls=document.getElementById("controls");
@@ -325,7 +338,22 @@ item.classList.add("watched");
 }
 });
 }
+progressContainer.addEventListener("mousemove",(e)=>{
 
+const rect=progressContainer.getBoundingClientRect();
+const percent=(e.clientX-rect.left)/rect.width;
+
+const time=percent*video.duration;
+
+hoverTime.style.left=(percent*100)+"%";
+hoverTime.innerText=format(time);
+hoverTime.style.display="block";
+
+});
+
+progressContainer.addEventListener("mouseleave",()=>{
+hoverTime.style.display="none";
+});
 function loadWatched(){
 let watched=JSON.parse(localStorage.getItem("watchedVideos")||"[]");
 
