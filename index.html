@@ -95,15 +95,16 @@ pointer-events:none;
 }
 
 .progress-container{
-width:100%;
+position:absolute;
+bottom:65px;
+left:10px;
+right:10px;
 height:5px;
 background:rgba(255,255,255,0.2);
 cursor:pointer;
-position:relative;
 border-radius:10px;
 overflow:visible;
 transition:0.2s;
-margin-top:10px;
 }
 
 .buffer{
@@ -631,4 +632,5 @@ item.textContent.toLowerCase().includes(q)
 loadList("videos");
 
 </script>
+
 </body></html>
